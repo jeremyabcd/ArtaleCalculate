@@ -343,11 +343,7 @@
         const select = document.getElementById("weapon-type");
         // 清空現有選項
         select.innerHTML = "";
-        // 首先加入自訂選項，預設單手劍
-        const defaultOption = document.createElement("option");
-        defaultOption.value = "default";
-        defaultOption.textContent = "單手劍";
-        select.appendChild(defaultOption);
+      
         // 為每個武器類型建立 option
         for (const [name, coef] of Object.entries(weaponCoefficients)) {
           const option = document.createElement("option");
@@ -356,7 +352,7 @@
           select.appendChild(option);
         }
         // 預設選擇自訂
-        select.value = localStorage.getItem("weapon-type") || "default";
+        select.value = localStorage.getItem("weapon-type") || "單手劍";
         updateWeaponCoefficients();
       }
 
@@ -374,7 +370,6 @@
         }
         document.getElementById("max-coef").value = coef.max;
         document.getElementById("min-coef").value = coef.min;
-        calculate();
       }
 
       /**
@@ -383,7 +378,8 @@
       function floor(value) {
         return Math.floor(value);
       }
-
+      
+      
       /**
        * 計算並更新結果
        */
@@ -461,13 +457,10 @@
 
       // 初始化
       window.addEventListener("DOMContentLoaded", () => {
-        populateWeaponOptions();
-        // 從 localStorage 載入之前的輸入資料
-        loadData();
-        // 更新武器係數以符合載入的選擇
-        updateWeaponCoefficients();
-        // 初始計算
-        calculate();
+        loadData();                 // ① 先灌回所有欄位
+        populateWeaponOptions();    // ② 建立下拉選單
+        updateWeaponCoefficients(); // ③ 根據選項寫入係數
+        calculate();                // ④ 跑一次計算
         // 綁定事件
         // 基礎輸入欄：主屬、攻擊力、熟練度、副屬
         const baseInputs = [
@@ -573,7 +566,7 @@
           }
         });
       }
-
+ 
       /**
        * 從 localStorage 載入儲存的表單資料
        */
