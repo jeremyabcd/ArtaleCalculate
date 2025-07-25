@@ -121,9 +121,9 @@
   <body>
     <div class="container">
       <h1>Artale裝備效益計算機</h1>
-      <p>
-        本工具根據您輸入的角色屬性與武器係數，計算最大/最小表攻以及升級後的提升幅度。
-        選擇武器類型後，係數將會自動填入。輸入值變動時結果即時更新。
+      <p style="text-align: center;">
+      本工具會根據您輸入的角色屬性與武器係數計算最大/最小表攻以及升級後的提升幅度。<br>
+      選擇武器類型後，係數將會自動填入，當輸入值變動時結果會即時更新。
       </p>
 
       <!-- 輸入區域 -->
@@ -147,7 +147,7 @@
               id="sub-attr"
               min="0"
               step="1"
-              placeholder="請輸入副屬性總和"
+              placeholder="請輸入副屬性數值"
             />
           </div>
           <div class="form-group">
@@ -157,7 +157,7 @@
               id="attack-power"
               min="0"
               step="1"
-              placeholder="請輸入攻擊力"
+              placeholder="請輸入攻擊力(武器+手套)"
             />
           </div>
           <div class="form-group">
@@ -199,8 +199,12 @@
 
         <div>
           <!-- 提升量計算區塊：原/新/提升值 -->
+           
           <div style="margin-bottom: 20px;">
-            <h3>屬性提升計算</h3>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <h3 style="margin: 0;">屬性提升計算</h3>
+            <div class="btn-note">※可輸入裝備前後數值或直接輸入差值</div>
+          </div>
             <div class="increase-grid">
               <div class="form-group">
                 <label for="old-main-attr">原裝備主屬性</label>
@@ -258,7 +262,7 @@
                 <td id="pre-range">0~0</td>
               </tr>
               <tr>
-                <td>提升後表攻</td>
+                <td>換裝後表攻</td>
                 <td id="post-range">0~0</td>
               </tr>
               <tr>
@@ -275,11 +279,40 @@
               </tr>
             </tbody>
           </table>
-          <p class="note">
-            提醒：最小表攻的公式中包含固定倍率 0.9，且與熟練度 (小數) 共同作用。
-            本工具自動向下取整，以模擬 Excel 中的 ROUNDDOWN 行為。
-          </p>
-          <button id="apply-new-data" style="margin-top: 10px; padding: 6px 12px; font-size: 14px;">套用新數據</button>
+          <style>
+          .custom-btn {
+            background-color: #60a5fa; /* 淺藍色 */
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+          }
+
+          .custom-btn:hover {
+            background-color: #3b82f6; /* hover 深一點但不過頭 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+          }
+
+          .btn-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+          }
+
+          .btn-note {
+            font-size: 14px;
+            color: #4b5563; /* 淺灰黑，更柔和 */
+          }
+        </style>
+          <div class="btn-row">
+          <button class="custom-btn" onclick="applySavedData()">套用新數據</button>
+          <span class="btn-note">※按下按鈕後會將提升數值直接加到原本的能力值中</span>
+          </div>
         </div>
       </div>
     </div>
