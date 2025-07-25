@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artale裝備效益計算機</title>
+    <style>
+      /* 基本佈局 */
+      :root {
+        --primary-color: #5b7fff;
+        --secondary-color: #f0f4ff;
+        --border-color: #d1d9f0;
+        --input-bg: #f9faff;
+        --table-header-bg: #e6edff;
+      }
+
+      body {
+        font-family: "Segoe UI", Roboto, Arial, Helvetica, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #eef1f8;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 1em;
+        color: var(--primary-color);
+      }
+
+      .container {
+        max-width: 950px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 10px;
+      }
+
+      .form-group label {
+        margin-bottom: 6px;
+        font-weight: bold;
+      }
+
+      .form-group input,
+      .form-group select {
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background-color: var(--input-bg);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(91, 127, 255, 0.2);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      table th,
+      table td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-align: center;
+      }
+
+      table thead th {
+        background-color: var(--table-header-bg);
+        color: #333;
+      }
+      table tr:nth-child(even) td {
+        background-color: var(--secondary-color);
+      }
+
+      .note {
+        margin-top: 12px;
+        font-size: 14px;
+        color: #555;
+      }
+
+      h3 {
+        margin-top: 10px;
+        margin-bottom: 10px;
+        font-size: 18px;
+      }
+
+      /* 提升計算區塊為 3 欄排版 */
+      .increase-grid {
+        display: grid;
+        /* 每行三欄，欄寬最小 120px ，可自動伸縮，避免溢出 */
+        grid-template-columns: repeat(3, minmax(120px, 1fr));
+        gap: 10px;
+      }
+      .increase-grid .form-group {
+        margin-bottom: 0;
+      }
+      .increase-grid .form-group label {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Artale裝備效益計算機</h1>
+      <p>
+        本工具根據您輸入的角色屬性與武器係數，計算最大/最小表攻以及升級後的提升幅度。
+        選擇武器類型後，係數將會自動填入。輸入值變動時結果即時更新。
+      </p>
+
+      <!-- 輸入區域 -->
+      <div class="grid">
+        <div>
+          <div class="form-group">
+            <label for="main-attr">主屬性</label>
+            <input
+              type="number"
+              id="main-attr"
+              min="0"
+              step="1"
+              placeholder="請輸入主屬性數值"
+            />
+          </div>
+          <!-- 副屬性排在主屬性後面 -->
+          <div class="form-group">
+            <label for="sub-attr">副屬性(刀賊是力量+敏捷)</label>
+            <input
+              type="number"
+              id="sub-attr"
+              min="0"
+              step="1"
+              placeholder="請輸入副屬性總和"
+            />
+          </div>
+          <div class="form-group">
+            <label for="attack-power">攻擊力</label>
+            <input
+              type="number"
+              id="attack-power"
+              min="0"
+              step="1"
+              placeholder="請輸入攻擊力"
+            />
+          </div>
+          <div class="form-group">
+            <label for="proficiency">熟練度 (小數，例如0.6)</label>
+            <input
+              type="number"
+              id="proficiency"
+              min="0"
+              step="0.1"
+              placeholder="請輸入熟練度，如 0.6"
+              value="0.6"
+            />
+          </div>
+          <div class="form-group">
+            <label for="weapon-type">武器類型</label>
+            <select id="weapon-type">
+              <!-- 選項將由腳本插入 -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="max-coef">武器最大係數</label>
+            <input
+              type="number"
+              id="max-coef"
+              step="0.1"
+              disabled
+            />
+          </div>
+          <div class="form-group">
+            <label for="min-coef">武器最小係數</label>
+            <input
+              type="number"
+              id="min-coef"
+              step="0.1"
+              disabled
+            />
+          </div>
+        </div>
+
+        <div>
+          <!-- 提升量計算區塊：原/新/提升值 -->
+          <div style="margin-bottom: 20px;">
+            <h3>屬性提升計算</h3>
+            <div class="increase-grid">
+              <div class="form-group">
+                <label for="old-main-attr">原裝備主屬性</label>
+                <input type="number" id="old-main-attr" step="1" placeholder="原主屬" />
+              </div>
+              <div class="form-group">
+                <label for="new-main-attr">新裝備主屬性</label>
+                <input type="number" id="new-main-attr" step="1" placeholder="新主屬" />
+              </div>
+              <div class="form-group">
+                <label for="attr-increase">主屬提升量</label>
+                <input type="number" id="attr-increase" step="1" placeholder="差值" />
+              </div>
+            </div>
+            <div class="increase-grid">
+              <div class="form-group">
+                <label for="old-sub-attr">原裝備副屬</label>
+                <input type="number" id="old-sub-attr" step="1" placeholder="原副屬" />
+              </div>
+              <div class="form-group">
+                <label for="new-sub-attr">新裝備副屬</label>
+                <input type="number" id="new-sub-attr" step="1" placeholder="新副屬" />
+              </div>
+              <div class="form-group">
+                <label for="sub-increase">副屬提升量</label>
+                <input type="number" id="sub-increase" step="1" placeholder="差值" />
+              </div>
+            </div>
+            <div class="increase-grid">
+              <div class="form-group">
+                <label for="old-attack">原裝備攻擊力</label>
+                <input type="number" id="old-attack" step="1" placeholder="原攻擊力" />
+              </div>
+              <div class="form-group">
+                <label for="new-attack">新裝備攻擊力</label>
+                <input type="number" id="new-attack" step="1" placeholder="新攻擊力" />
+              </div>
+              <div class="form-group">
+                <label for="attack-increase">攻擊力提升量</label>
+                <input type="number" id="attack-increase" step="1" placeholder="差值" />
+              </div>
+            </div>
+          </div>
+          <!-- 結果顯示表格：以五列摘要取代原有八列 -->
+          <table id="summary-table" style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>數值</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>提升前表攻</td>
+                <td id="pre-range">0~0</td>
+              </tr>
+              <tr>
+                <td>提升後表攻</td>
+                <td id="post-range">0~0</td>
+              </tr>
+              <tr>
+                <td>最大表攻成長</td>
+                <td id="max-growth">+0</td>
+              </tr>
+              <tr>
+                <td>1攻擊 = 幾主屬性</td>
+                <td id="atk-to-attr">0</td>
+              </tr>
+              <tr>
+                <td>總增幅</td>
+                <td id="total-rate">0%</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="note">
+            提醒：最小表攻的公式中包含固定倍率 0.9，且與熟練度 (小數) 共同作用。
+            本工具自動向下取整，以模擬 Excel 中的 ROUNDDOWN 行為。
+          </p>
+          <button id="apply-new-data" style="margin-top: 10px; padding: 6px 12px; font-size: 14px;">套用新數據</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 武器類型與對應係數
+      const weaponCoefficients = {
+        "單手劍": { max: 4.2, min: 4.2 },
+        "雙手劍": { max: 4.8, min: 4.8 },
+        "單手斧": { max: 4.8, min: 3.6 },
+        "單手棍": { max: 4.8, min: 3.6 },
+        "雙手斧": { max: 5.2, min: 4.0 },
+        "雙手棍": { max: 5.2, min: 4.0 },
+        "矛": { max: 5.2, min: 3.5 },
+        "槍": { max: 5.1, min: 3.6 },
+        "短刀": { max: 4.2, min: 3.6 },
+        "拳套": { max: 3.6, min: 3.6 },
+        "弓": { max: 3.4, min: 3.4 },
+        "弩": { max: 3.6, min: 3.6 },
+        "指虎": { max: 4.8, min: 4.8 },
+        "火槍": { max: 3.6, min: 3.6 }
+      };
+
+      /**
+       * 將武器下拉選單選項填充
+       */
+      function populateWeaponOptions() {
+        const select = document.getElementById("weapon-type");
+        // 清空現有選項
+        select.innerHTML = "";
+        // 首先加入自訂選項，預設單手劍
+        const defaultOption = document.createElement("option");
+        defaultOption.value = "default";
+        defaultOption.textContent = "單手劍";
+        select.appendChild(defaultOption);
+        // 為每個武器類型建立 option
+        for (const [name, coef] of Object.entries(weaponCoefficients)) {
+          const option = document.createElement("option");
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        }
+        // 預設選擇自訂
+        select.value = localStorage.getItem("weapon-type") || "default";
+        updateWeaponCoefficients();
+      }
+
+      /**
+       * 根據選擇的武器類型填入最大/最小係數
+       */
+      function updateWeaponCoefficients() {
+        const type = document.getElementById("weapon-type").value;
+        let coef;
+        if (type === "default") {
+          // 自訂選項，預設為 0.6
+          coef = { max: 0.6, min: 0.6 };
+        } else {
+          coef = weaponCoefficients[type];
+        }
+        document.getElementById("max-coef").value = coef.max;
+        document.getElementById("min-coef").value = coef.min;
+        calculate();
+      }
+
+      /**
+       * 向下取整函式 (floor)
+       */
+      function floor(value) {
+        return Math.floor(value);
+      }
+
+      /**
+       * 計算並更新結果
+       */
+      function calculate() {
+        // 讀取輸入值，轉為數字
+        const mainAttr = parseFloat(document.getElementById("main-attr").value) || 0;
+        const attackPower = parseFloat(document.getElementById("attack-power").value) || 0;
+        const proficiency = parseFloat(document.getElementById("proficiency").value) || 0;
+        const subAttr = parseFloat(document.getElementById("sub-attr").value) || 0;
+        const maxCoef = parseFloat(document.getElementById("max-coef").value) || 0;
+        const minCoef = parseFloat(document.getElementById("min-coef").value) || 0;
+        const attrIncrease = parseFloat(document.getElementById("attr-increase").value) || 0;
+        const subIncrease = parseFloat(document.getElementById("sub-increase").value) || 0;
+        const atkIncrease = parseFloat(document.getElementById("attack-increase").value) || 0;
+
+        // 最大表攻公式：ROUNDDOWN((主屬性 * 武器最大係數 + 副屬性) * 攻擊力 / 100)
+        const maxDisplay = floor(((mainAttr * maxCoef + subAttr) * attackPower) / 100);
+        // 最小表攻公式：ROUNDDOWN((主屬性 * 武器最小係數 * 0.9 * 熟練度 + 副屬性) * 攻擊力 / 100)
+        const minDisplay = floor(((mainAttr * minCoef * 0.9 * proficiency + subAttr) * attackPower) / 100);
+
+        // 以基礎數值計算 +1 主屬性 與 +1 攻擊力 的表攻增量，用於計算比率 (舊機體)
+        const rawBaseMax = ((mainAttr * maxCoef + subAttr) * attackPower) / 100;
+        const baseAtkMaxPlus1 = ((mainAttr * maxCoef + subAttr) * (attackPower + 1)) / 100;
+        const baseAttrMaxPlus1 = (((mainAttr + 1) * maxCoef + subAttr) * attackPower) / 100;
+        const atkGrowth1 = baseAtkMaxPlus1 - rawBaseMax;
+        const attrGrowth1 = baseAttrMaxPlus1 - rawBaseMax;
+        
+
+        // 計算新機體（套用提升後）的最大/最小表攻
+        const newMain = mainAttr + attrIncrease;
+        const newSub = subAttr + subIncrease;
+        const newAtk = attackPower + atkIncrease;
+
+        // 新機體最大表攻
+        const newMaxDisplay = floor(((newMain * maxCoef + newSub) * newAtk) / 100);
+        // 新機體最小表攻
+        const newMinDisplay = floor(((newMain * minCoef * 0.9 * proficiency + newSub) * newAtk) / 100);
+        // 最大表攻成長 = 新機體最大表攻 - 原始最大表攻
+        const maxGrowth = newMaxDisplay - maxDisplay;
+        // 總增幅百分比
+        let totalRate = 0;
+        if (maxDisplay > 0) {
+          totalRate = (maxGrowth / maxDisplay) * 100;
+        }
+        // 計算新機體 1 攻擊力對應多少主屬性的表攻增量比值
+        // 新機體 +1 攻擊力後的最大表攻
+        const newAtkMaxPlus1 = (((newMain * maxCoef + newSub) * (newAtk + 1)) / 100);
+        // 新機體原始最大表攻（未捨去小數，用作增量基準）
+        const newBaseRaw = ((newMain * maxCoef + newSub) * newAtk) / 100;
+        const newAtkGrowth = newAtkMaxPlus1 - newBaseRaw;
+
+        // 新機體 +1 主屬性後的最大表攻
+        const newAttrMaxPlus1 = ((((newMain + 1) * maxCoef + newSub) * newAtk) / 100);
+        const newAttrGrowth = newAttrMaxPlus1 - newBaseRaw;
+        let atkToAttrRatio = "";
+        if (attrIncrease === 0 && atkIncrease === 0 && mainAttr > 0 && attackPower > 0) {
+          // 無提升 → 顯示舊機體
+          if (attrGrowth1 !== 0) {
+            atkToAttrRatio = (atkGrowth1 / attrGrowth1).toFixed(2);
+          }
+        } else if (newAttrGrowth !== 0) {
+          // 有提升 → 顯示新機體
+          atkToAttrRatio = (newAtkGrowth / newAttrGrowth).toFixed(2);
+        }
+
+        // 更新摘要表格內容
+        document.getElementById("pre-range").textContent = `${minDisplay}~${maxDisplay}`;
+        document.getElementById("post-range").textContent = `${newMinDisplay}~${newMaxDisplay}`;
+        document.getElementById("max-growth").textContent = `+${maxGrowth}`;
+        document.getElementById("total-rate").textContent = `${totalRate.toFixed(2)}%`;
+        document.getElementById("atk-to-attr").textContent = atkToAttrRatio;
+        // 呼叫 saveData 以保存輸入資料
+        saveData();
+      }
+
+      // 初始化
+      window.addEventListener("DOMContentLoaded", () => {
+        populateWeaponOptions();
+        // 從 localStorage 載入之前的輸入資料
+        loadData();
+        // 更新武器係數以符合載入的選擇
+        updateWeaponCoefficients();
+        // 初始計算
+        calculate();
+        // 綁定事件
+        // 基礎輸入欄：主屬、攻擊力、熟練度、副屬
+        const baseInputs = [
+          "main-attr",
+          "attack-power",
+          "proficiency",
+          "sub-attr",
+        ];
+        baseInputs.forEach((id) => {
+          document.getElementById(id).addEventListener("input", calculate);
+        });
+        // 武器選單變更時更新係數並計算
+        document.getElementById("weapon-type").addEventListener("change", updateWeaponCoefficients);
+
+        // 提升區域：當原值或新值變更時自動計算差值
+        function bindDiff(oldId, newId, diffId) {
+          const oldElem = document.getElementById(oldId);
+          const newElem = document.getElementById(newId);
+          const diffElem = document.getElementById(diffId);
+          function update() {
+            const oldVal = parseFloat(oldElem.value);
+            const newVal = parseFloat(newElem.value);
+            if (!isNaN(oldVal) && !isNaN(newVal)) {
+              diffElem.value = newVal - oldVal;
+            }
+            calculate();
+          }
+          oldElem.addEventListener("input", update);
+          newElem.addEventListener("input", update);
+          // 使用者手動修改差值時只計算
+          diffElem.addEventListener("input", calculate);
+        }
+        // 主屬提升量
+        bindDiff("old-main-attr", "new-main-attr", "attr-increase");
+        // 副屬提升量
+        bindDiff("old-sub-attr", "new-sub-attr", "sub-increase");
+        // 攻擊力提升量
+        bindDiff("old-attack", "new-attack", "attack-increase");
+
+        // 套用新數據按鈕點擊事件：將提升量套用到基礎屬性，並清空提升區域
+        const applyBtn = document.getElementById("apply-new-data");
+        if (applyBtn) {
+          applyBtn.addEventListener("click", () => {
+            const mainAttrInput = document.getElementById("main-attr");
+            const subAttrInput = document.getElementById("sub-attr");
+            const attackInput = document.getElementById("attack-power");
+            const attrInc = parseFloat(document.getElementById("attr-increase").value) || 0;
+            const subInc = parseFloat(document.getElementById("sub-increase").value) || 0;
+            const atkInc = parseFloat(document.getElementById("attack-increase").value) || 0;
+            if (mainAttrInput) mainAttrInput.value = (parseFloat(mainAttrInput.value) || 0) + attrInc;
+            if (subAttrInput) subAttrInput.value = (parseFloat(subAttrInput.value) || 0) + subInc;
+            if (attackInput) attackInput.value = (parseFloat(attackInput.value) || 0) + atkInc;
+            // 清空提升量與原/新欄位
+            const clearIds = [
+              "attr-increase",
+              "sub-increase",
+              "attack-increase",
+              "old-main-attr",
+              "new-main-attr",
+              "old-sub-attr",
+              "new-sub-attr",
+              "old-attack",
+              "new-attack",
+            ];
+            clearIds.forEach((cid) => {
+              const elem = document.getElementById(cid);
+              if (elem) {
+                elem.value = "";
+              }
+            });
+            calculate();
+            saveData();
+          });
+        }
+      });
+
+      /**
+       * 將當前表單資料儲存到 localStorage
+       */
+      function saveData() {
+        // 定義所有要儲存的欄位 ID
+        const ids = [
+          "main-attr",
+          "sub-attr",
+          "attack-power",
+          "proficiency",
+          "weapon-type",
+          "old-main-attr",
+          "new-main-attr",
+          "attr-increase",
+          "old-sub-attr",
+          "new-sub-attr",
+          "sub-increase",
+          "old-attack",
+          "new-attack",
+          "attack-increase",
+        ];
+        ids.forEach((id) => {
+          const elem = document.getElementById(id);
+          if (elem) {
+            // select 和 input 皆有 value 屬性
+            localStorage.setItem(id, elem.value);
+          }
+        });
+      }
+
+      /**
+       * 從 localStorage 載入儲存的表單資料
+       */
+      function loadData() {
+        const ids = [
+          "main-attr",
+          "sub-attr",
+          "attack-power",
+          "proficiency",
+          "weapon-type",
+          "old-main-attr",
+          "new-main-attr",
+          "attr-increase",
+          "old-sub-attr",
+          "new-sub-attr",
+          "sub-increase",
+          "old-attack",
+          "new-attack",
+          "attack-increase",
+        ];
+        ids.forEach((id) => {
+          const saved = localStorage.getItem(id);
+          if (saved !== null) {
+            const elem = document.getElementById(id);
+            if (elem) {
+              elem.value = saved;
+            }
+          }
+        });
+        // 若武器類型有儲存，更新下拉選單
+        const savedType = localStorage.getItem("weapon-type");
+        if (savedType) {
+          const select = document.getElementById("weapon-type");
+          if (select) {
+            select.value = savedType;
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
