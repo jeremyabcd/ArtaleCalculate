@@ -103,15 +103,17 @@
         font-size: 18px;
       }
 
-      /* 提升計算區塊為 3 欄排版 */
+      /* 提升計算區塊為三欄排版 */
       .increase-grid {
         display: grid;
-        /* 每行三欄，欄寬最小 120px ，可自動伸縮，避免溢出 */
-        grid-template-columns: repeat(3, minmax(120px, 1fr));
+        /* 三欄等分，欄寬隨容器縮放，不設定最小寬度以避免在較小視窗時溢出 */
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
       }
       .increase-grid .form-group {
         margin-bottom: 0;
+        /* 允許格子在縮小時比內容窄，避免因內容寬度造成整行溢出 */
+        min-width: 0;
       }
       .increase-grid .form-group label {
         font-size: 14px;
@@ -146,6 +148,63 @@
       .btn-note {
         font-size: 14px;
         color: #4b5563;
+      }
+
+      /*───────────────────
+        行動裝置優化
+        當螢幕寬度小於 600px 時調整排版與間距
+      ───────────────────*/
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
+        }
+        .container {
+          padding: 16px;
+        }
+        /* 將左右欄堆疊為單欄 */
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        /* 在手機螢幕下仍維持三欄排列，但讓欄寬自動縮放以避免格子超出容器 */
+        .increase-grid {
+          /* 三欄等分，欄寬可小於 100px 時自動縮小 */
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+        }
+        /* 手機下：允許格子收縮避免超出容器 */
+        .increase-grid .form-group {
+          min-width: 0;
+        }
+        /* 調整提升區域內的標籤與輸入框字體大小，讓內容在窄螢幕仍易於閱讀 */
+        .increase-grid .form-group label {
+          font-size: 13px;
+        }
+        .increase-grid .form-group input {
+          font-size: 14px;
+          padding: 8px;
+          box-sizing: border-box;
+        }
+        h1 {
+          font-size: 1.6em;
+        }
+        h3 {
+          font-size: 16px;
+        }
+        /* 按鈕列改為直向排列，左對齊 */
+        .btn-row {
+          flex-direction: column;
+          align-items: flex-start;
+          margin-top: 24px;
+        }
+        .btn-row .custom-btn {
+          margin-bottom: 8px;
+        }
+        /* 縮小表格字體並允許橫向捲動 */
+        table {
+          font-size: 14px;
+          overflow-x: auto;
+          display: block;
+        }
       }
     </style>
   </head>
@@ -282,7 +341,7 @@
                 <input type="number" id="new-attack" step="1" placeholder="新攻擊力" />
               </div>
               <div class="form-group">
-                <label for="attack-increase">攻擊力提升量</label>
+                <label for="attack-increase">攻擊提升量</label>
                 <input type="number" id="attack-increase" step="1" placeholder="差值" />
               </div>
             </div>
