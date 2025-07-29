@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jeremyabcd.github.io/ArtaleCalculate/sitemap.xml
