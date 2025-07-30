@@ -153,9 +153,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        /* 更大的 margin-top 讓按鈕列位置稍微下移，左右區塊更對稱 */
-        /* 增加更多的 margin-top 讓按鈕列更往下，對齊左側輸入區域底部 */
-        margin-top: 40px;
+        margin-top: 15px;
       }
 
       .btn-note {
@@ -232,45 +230,36 @@
       <!-- 輸入區域 -->
       <div class="grid">
         <div>
+          <!-- 武器類型 -->
           <div class="form-group">
-            <label for="main-attr">主屬性</label>
-            <input
-              type="number"
-              id="main-attr"
-              min="0"
-              step="1"
-              placeholder="請輸入主屬性數值"
-            />
+            <label for="weapon-type">武器類型</label>
+            <select id="weapon-type">
+              <!-- 選項將由腳本插入 -->
+            </select>
           </div>
-          <!-- 副屬性排在主屬性後面 -->
+          <!-- 武器係數：最大與最小並排 -->
           <div class="form-group">
-            <label for="sub-attr">副屬性(刀賊是力量+敏捷)</label>
-            <input
-              type="number"
-              id="sub-attr"
-              min="0"
-              step="1"
-              placeholder="請輸入副屬性數值"
-            />
+            <label for="max-coef">武器係數</label>
+            <div style="display:flex; gap:6px;">
+              <input
+                type="number"
+                id="max-coef"
+                step="0.1"
+                disabled
+                placeholder="最大"
+                style="flex:1; min-width:0;"
+              />
+              <input
+                type="number"
+                id="min-coef"
+                step="0.1"
+                disabled
+                placeholder="最小"
+                style="flex:1; min-width:0;"
+              />
+            </div>
           </div>
-          <div class="form-group">
-            <label for="attack-power">攻擊力</label>
-            <input
-              type="number"
-              id="attack-power"
-              min="0"
-              step="1"
-              placeholder="請輸入攻擊力(武器+手套+飛鏢/箭矢/子彈)"
-            />
-          </div>
-          <!-- 雪花勾選框：獨立容器，點擊整行可切換勾選 -->
-          <div
-            id="snowflake-container"
-            style="display:flex; align-items:center; gap:6px; margin-top:6px; margin-bottom:10px; cursor:pointer;"
-          >
-            <input type="checkbox" id="snowflake-check" style="pointer-events:none;" />
-            <span class="btn-note">※使用雪花（攻擊力+20）</span>
-          </div>
+          <!-- 熟練度 -->
           <div class="form-group">
             <label for="proficiency">熟練度 (小數，例如0.6)</label>
             <input
@@ -282,29 +271,103 @@
               value="0.6"
             />
           </div>
+          <!-- 主屬性 -->
           <div class="form-group">
-            <label for="weapon-type">武器類型</label>
-            <select id="weapon-type">
-              <!-- 選項將由腳本插入 -->
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="max-coef">武器最大係數</label>
+            <label for="main-attr">主屬性</label>
             <input
               type="number"
-              id="max-coef"
-              step="0.1"
-              disabled
+              id="main-attr"
+              min="0"
+              step="1"
+              placeholder="請輸入主屬性數值"
             />
           </div>
+          <!-- 副屬性排在主屬性後面 -->
+          <div class="form-group" id="sub-attr-group">
+            <label for="sub-attr">副屬性</label>
+            <!-- 單一副屬性輸入欄位：加入佔位元素保持與雙欄寬度一致 -->
+            <div id="sub-attr-single" style="display:flex; gap:6px; width:100%;">
+              <input
+                type="number"
+                id="sub-attr"
+                min="0"
+                step="1"
+                placeholder="請輸入副屬性數值"
+                style="flex:1; min-width:0;"
+              />
+              <div id="sub-attr-dummy" style="flex:1;"></div>
+            </div>
+            <!-- 拳套/短刀用：力量與敏捷兩個欄位，預設隱藏 -->
+            <div
+              id="sub-attr-dual"
+              style="display:none; width:100%; gap:6px;"
+            >
+              <input
+                type="number"
+                id="sub-attr-str"
+                min="0"
+                step="1"
+                placeholder="力量"
+                style="flex:1; min-width:0;"
+              />
+              <input
+                type="number"
+                id="sub-attr-agi"
+                min="0"
+                step="1"
+                placeholder="敏捷"
+                style="flex:1; min-width:0;"
+              />
+            </div>
+          </div>
+          <!-- 攻擊力 -->
           <div class="form-group">
-            <label for="min-coef">武器最小係數</label>
+            <label for="attack-power">攻擊力</label>
             <input
               type="number"
-              id="min-coef"
-              step="0.1"
-              disabled
+              id="attack-power"
+              min="0"
+              step="1"
+              placeholder="請輸入攻擊力(武器+手套+飛鏢/箭矢/子彈)"
             />
+          </div>
+          <!-- 攻擊提升勾選框：雪花、激勵、攻擊藥丸、章魚燒/龍血，彼此互斥。點擊任一項可勾選或取消，其他項目會自動取消勾選 -->
+          <div
+            id="attack-boost-container"
+            style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:6px; margin-bottom:10px;"
+          >
+            <div
+              class="boost-option"
+              id="snowflake-container"
+              style="display:flex; align-items:center; gap:6px; cursor:pointer;"
+            >
+              <input type="checkbox" id="snowflake-check" style="pointer-events:none;" />
+              <span class="btn-note">使用雪花（+20攻）</span>
+            </div>
+            <div
+              class="boost-option"
+              id="motivation-container"
+              style="display:flex; align-items:center; gap:6px; cursor:pointer;"
+            >
+              <input type="checkbox" id="boost-motivation-check" style="pointer-events:none;" />
+              <span class="btn-note">激勵(+10攻)</span>
+            </div>
+            <div
+              class="boost-option"
+              id="pill-container"
+              style="display:flex; align-items:center; gap:6px; cursor:pointer;"
+            >
+              <input type="checkbox" id="boost-pill-check" style="pointer-events:none;" />
+              <span class="btn-note">攻擊藥丸(+5攻)</span>
+            </div>
+            <div
+              class="boost-option"
+              id="takoyaki-container"
+              style="display:flex; align-items:center; gap:6px; cursor:pointer;"
+            >
+              <input type="checkbox" id="boost-takoyaki-check" style="pointer-events:none;" />
+              <span class="btn-note">章魚燒/龍血(+8攻)</span>
+            </div>
           </div>
         </div>
 
@@ -449,6 +512,11 @@
 
         document.getElementById("max-coef").value = coef.max;
         document.getElementById("min-coef").value = coef.min;
+
+        // 根據所選武器切換副屬性輸入欄位（單一或雙欄）
+        if (typeof updateSubAttrFields === "function") {
+          updateSubAttrFields();
+        }
       }
 
       /*───────────────────
@@ -457,19 +525,61 @@
       const floor = Math.floor;
 
       /*───────────────────
+        自訂函式：根據武器類型切換副屬欄位
+        ───────────────────*/
+      function updateSubAttrFields () {
+        const type = document.getElementById("weapon-type").value;
+        const single = document.getElementById("sub-attr-single");
+        const dual   = document.getElementById("sub-attr-dual");
+        if (!single || !dual) return;
+        if (type === "拳套" || type === "短刀") {
+          // 拳套/短刀：顯示雙欄，隱藏單欄
+          if (single) single.style.display = "none";
+          if (dual) dual.style.display   = "flex";
+        } else {
+          // 其他武器：顯示單欄，隱藏雙欄。將佔位元素隱藏，使輸入格全寬。
+          if (single) single.style.display = "flex";
+          if (dual) dual.style.display   = "none";
+          const dummy = document.getElementById("sub-attr-dummy");
+          if (dummy) dummy.style.display = "none";
+        }
+      }
+
+      /*───────────────────
         ⑤ 主計算函式
       ───────────────────*/
       function calculate () {
+        // 每次計算前依武器類型切換副屬欄位，確保顯示正確
+        if (typeof updateSubAttrFields === "function") {
+          updateSubAttrFields();
+        }
+
         /* 基本欄位 ───*/
         const mainAttr  = +document.getElementById("main-attr").value  || 0;
-        const subAttr   = +document.getElementById("sub-attr").value   || 0;
-        let   attackPow = +document.getElementById("attack-power").value || 0; // ←用 let 才能改值
+        // 根據武器類型決定副屬性
+        let subAttr;
+        const wtype = document.getElementById("weapon-type").value;
+        if (wtype === "拳套" || wtype === "短刀") {
+          const strVal = +document.getElementById("sub-attr-str").value || 0;
+          const agiVal = +document.getElementById("sub-attr-agi").value || 0;
+          subAttr = strVal + agiVal;
+        } else {
+          subAttr = +document.getElementById("sub-attr").value || 0;
+        }
+        let attackPow = +document.getElementById("attack-power").value || 0; // ←用 let 才能改值
         const prof      = +document.getElementById("proficiency").value || 0;
         const maxCoef   = +document.getElementById("max-coef").value   || 0;
         const minCoef   = +document.getElementById("min-coef").value   || 0;
 
         /* 是否勾選「雪花 +20」 */
         if (document.getElementById("snowflake-check").checked) attackPow += 20;
+        // 新增互斥攻擊提升選項：根據勾選狀態加上對應攻擊力
+        const motChk   = document.getElementById("boost-motivation-check");
+        const pillChk  = document.getElementById("boost-pill-check");
+        const takoChk  = document.getElementById("boost-takoyaki-check");
+        if (motChk && motChk.checked) attackPow += 10;
+        if (pillChk && pillChk.checked) attackPow += 5;
+        if (takoChk && takoChk.checked) attackPow += 8;
 
         /* 提升欄位 ───*/
         const attrInc = +document.getElementById("attr-increase").value   || 0;
@@ -519,8 +629,19 @@
         ⑥ 儲存 / 載入（只存左邊基本欄位＋雪花與武器）
       ───────────────────*/
       const STORE_KEYS = [
-        "main-attr", "sub-attr", "attack-power", "proficiency",
-        "weapon-type", "snowflake-check"
+        "main-attr",
+        "sub-attr",
+        "attack-power",
+        "proficiency",
+        "weapon-type",
+        "snowflake-check",
+        // 新增兩個副屬欄位供拳套/短刀使用
+        "sub-attr-str",
+        "sub-attr-agi",
+        // 三個互斥攻擊選項
+        "boost-motivation-check",
+        "boost-pill-check",
+        "boost-takoyaki-check"
       ];
 
       function saveData () {
@@ -557,6 +678,13 @@
           "proficiency",
           "sub-attr",
           "snowflake-check",
+          // 拳套/短刀使用的雙副屬欄位
+          "sub-attr-str",
+          "sub-attr-agi",
+          // 互斥攻擊提升選項勾選框
+          "boost-motivation-check",
+          "boost-pill-check",
+          "boost-takoyaki-check",
           // 提升區原值、新值與差值
           "old-main-attr",
           "new-main-attr",
@@ -575,16 +703,25 @@
           elem.addEventListener(eventType, calculate);
         });
 
-        // 點擊雪花整行時切換勾選狀態並重新計算與儲存
-        const snowContainer = document.getElementById("snowflake-container");
-        if (snowContainer) {
-          snowContainer.addEventListener("click", () => {
-            const chk = document.getElementById("snowflake-check");
-            if (chk) {
-              chk.checked = !chk.checked;
+        // 攻擊提升選項（雪花、激勵、攻擊藥丸、章魚燒/龍血）：點擊任一行切換勾選狀態，且彼此互斥
+        const boostContainer = document.getElementById("attack-boost-container");
+        if (boostContainer) {
+          const options = boostContainer.querySelectorAll(".boost-option");
+          options.forEach((opt) => {
+            opt.addEventListener("click", () => {
+              const chk = opt.querySelector("input[type='checkbox']");
+              if (!chk) return;
+              const wasChecked = chk.checked;
+              // 先全部取消勾選
+              options.forEach((o) => {
+                const cb = o.querySelector("input[type='checkbox']");
+                if (cb) cb.checked = false;
+              });
+              // 若之前未勾選，則勾選此項；若已勾選，則保持取消
+              chk.checked = !wasChecked;
               calculate();
               saveData();
-            }
+            });
           });
         }
         // 武器選單變更時更新係數並計算
