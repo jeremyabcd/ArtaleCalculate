@@ -51,7 +51,8 @@
 
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        /* 調整最小欄寬，使版面在較小螢幕時也不會撐出容器。原本使用 280px 會造成 482px 以下寬度溢出，因此改為約 230px。 */
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
         gap: 20px;
       }
 
@@ -224,6 +225,26 @@
           display: block;
         }
       }
+
+    /*───────────────────
+      進一步在較小螢幕時調整字體與間距，
+      讓三欄輸入區塊能夠更好地縮放，不會撐出白底容器。
+    ───────────────────*/
+    @media (max-width: 480px) {
+      /* 適度減少欄間距，讓三欄更緊湊 */
+      .increase-grid {
+        gap: 6px;
+      }
+      /* 調整提升區域標籤字體大小 */
+      .increase-grid .form-group label {
+        font-size: 12px;
+      }
+      /* 調整輸入框字體與內邊距，避免被擠壓時內容難以閱讀 */
+      .increase-grid .form-group input {
+        font-size: 12px;
+        padding: 6px;
+      }
+    }
     </style>
   </head>
   <body>
