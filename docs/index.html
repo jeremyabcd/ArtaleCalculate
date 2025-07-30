@@ -245,6 +245,24 @@
         padding: 6px;
       }
     }
+    .increase-grid,
+    .increase-grid .form-group,
+    .increase-grid .form-group > * { min-width: 0; }
+    
+    .form-group input,
+    .form-group select { width: 100%; max-width: 100%; box-sizing: border-box; }
+    
+    .increase-grid .form-group label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    @media (max-width: 480px) {
+      .increase-grid { gap: 6px; }
+      .increase-grid .form-group label { font-size: 12px; }
+      .increase-grid .form-group input { font-size: 12px; padding: 6px; }
+    }
     </style>
   </head>
   <body>
