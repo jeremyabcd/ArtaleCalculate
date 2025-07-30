@@ -181,8 +181,9 @@
         /* 在手機螢幕下仍維持三欄排列，但讓欄寬自動縮放以避免格子超出容器 */
         .increase-grid {
           /* 三欄等分，欄寬可小於 100px 時自動縮小 */
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
+           grid-template-columns: repeat(3, minmax(0, 1fr));
+           gap: 8px;
+           overflow-x: auto;  /* 必要時可橫向捲動，避免撐出 */
         }
         /* 手機下：允許格子收縮避免超出容器 */
         .increase-grid .form-group {
@@ -191,8 +192,12 @@
         /* 調整提升區域內的標籤與輸入框字體大小，讓內容在窄螢幕仍易於閱讀 */
         .increase-grid .form-group label {
           font-size: 13px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .increase-grid .form-group input {
+          width: 100%;
           font-size: 14px;
           padding: 8px;
           box-sizing: border-box;
