@@ -478,14 +478,32 @@
               <span class="btn-note">章魚燒/龍血(+8攻)</span>
             </div>
           </div>
-          <!-- 楓葉祝福：技能等級選單，僅作用於配點屬性，小數捨去 -->
+          <!-- 楓葉祝福設定：包含目前等級/目標等級選單與套用開關 -->
           <div class="form-group">
-            <label for="maple-level">楓葉祝福等級</label>
-            <select id="maple-level"></select>
+            <!-- 標題與套用開關同行顯示 -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <label style="margin-bottom:0; font-weight:bold;">楓葉祝福</label>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <label for="maple-apply-toggle" style="font-size:14px; white-space:nowrap;">將目標等級效果套用至右側</label>
+                <input type="checkbox" id="maple-apply-toggle" />
+              </div>
+            </div>
+            <!-- 目前/目標等級下拉選單：同一行並排，佔用各半寬度 -->
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <div style="flex:1; min-width:0;">
+                <label for="maple-current-level" style="font-size:14px;">目前等級</label>
+                <select id="maple-current-level"></select>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <label for="maple-target-level" style="font-size:14px;">目標等級</label>
+                <select id="maple-target-level"></select>
+              </div>
+            </div>
           </div>
-          <!-- 楓葉祝福說明與表攻顯示 -->
+          <!-- 楓葉祝福說明與表攻顯示：顯示目前與目標等級的表攻，以及提升百分比 -->
           <p class="note" style="margin-top:8px;">
-            可選擇等級後套用楓葉祝福，若選擇0則為不使用，建議模擬未來會提升的等級，並套用到配點上會更符合實際情況。<br />
+            可選擇等級後套用楓葉祝福，建議模擬未來擁有楓祝時的等級，並將屬性差加到配點上模擬會更符合實際情況。<br />
+            ※打勾後會將目標等級的效果套用至右側，此功能為開放四轉前的體驗版，開放四轉後會進行改動。<br />
             目前(2025/8/6)包含國際服在內仍無法取得楓祝30技能書（於皮卡啾掉落），建議模擬時最多選擇20等。<br />
           </p>
           <table class="table" id="maple-attack-table" style="width:100%; margin-top:8px; border-collapse: collapse;">
@@ -497,16 +515,16 @@
             </thead>
             <tbody>
               <tr>
-                <td>楓祝前表攻</td>
-                <td id="maple-pre-range">0~0</td>
+                <td>目前楓祝等級表攻</td>
+                <td id="maple-current-range">0~0</td>
               </tr>
               <tr>
-                <td>楓祝後表攻</td>
-                <td id="maple-post-range">0~0</td>
+                <td>目標楓祝等級表攻</td>
+                <td id="maple-target-range">0~0</td>
               </tr>
               <tr>
-                <td>楓祝增幅</td>
-                <td id="maple-rate">0~0</td>
+                <td>升至目標等級後表攻提升</td>
+                <td id="maple-increase-rate">0.00%</td>
               </tr>
             </tbody>
           </table>
@@ -731,17 +749,49 @@
 
       /*───────────────────
         新增：產生楓葉祝福下拉式選單
-        將 0~30 等級依序加入 select#maple-level
+        為目前與目標等級各自產生 0~30 的選項
       ───────────────────*/
-      function populateMapleSelect() {
-        const sel = document.getElementById('maple-level');
-        if (!sel) return;
-        sel.innerHTML = '';
+      function populateMapleSelects() {
+        const currentSel = document.getElementById('maple-current-level');
+        const targetSel  = document.getElementById('maple-target-level');
+        if (!currentSel || !targetSel) return;
+        currentSel.innerHTML = '';
+        targetSel.innerHTML  = '';
         for (let i = 0; i <= 30; i++) {
-          const opt = document.createElement('option');
-          opt.value = String(i);
-          opt.textContent = String(i);
-          sel.appendChild(opt);
+          const opt1 = document.createElement('option');
+          opt1.value = String(i);
+          opt1.textContent = String(i);
+          currentSel.appendChild(opt1);
+          const opt2 = document.createElement('option');
+          opt2.value = String(i);
+          opt2.textContent = String(i);
+          targetSel.appendChild(opt2);
+        }
+      }
+
+      /*───────────────────
+        新增：更新目標等級選項
+        將目標等級只能選擇比目前等級高的數字；可將較低等級設為 disabled
+      ───────────────────*/
+      function updateTargetOptions() {
+        const currentSel = document.getElementById('maple-current-level');
+        const targetSel  = document.getElementById('maple-target-level');
+        if (!currentSel || !targetSel) return;
+        const currentVal = parseInt(currentSel.value, 10) || 0;
+        // 檢查並禁用小於等於目前等級的選項
+        Array.from(targetSel.options).forEach(opt => {
+          const v = parseInt(opt.value, 10);
+          opt.disabled = v <= currentVal;
+        });
+        // 若目標等級目前值 <= 目前等級，調整為下一個可用值
+        if (parseInt(targetSel.value, 10) <= currentVal) {
+          // 尋找第一個沒有被禁用的選項
+          for (let i = 0; i < targetSel.options.length; i++) {
+            if (!targetSel.options[i].disabled) {
+              targetSel.value = targetSel.options[i].value;
+              break;
+            }
+          }
         }
       }
 
@@ -885,6 +935,12 @@
         if (typeof updateAttrHintAndLabels === 'function') {
           updateAttrHintAndLabels();
         }
+
+        // 調整左右欄位高度以維持對稱
+        if (typeof adjustColumnHeights === 'function') {
+          // 使用 setTimeout 以確保 DOM 更新後再調整高度
+          setTimeout(adjustColumnHeights, 0);
+        }
       }
 
       /*───────────────────
@@ -914,8 +970,15 @@
         // 讀取配點與裝備值
         const mainPoint = +document.getElementById("main-attr-point").value || 0;
         const mainEquip = +document.getElementById("main-attr-equip").value || 0;
-        const mapleLevel = +document.getElementById("maple-level").value || 0;
-        const maplePct = getMapleIncrease(mapleLevel); // 0~15 代表百分比
+        // 讀取楓葉祝福等級：目前與目標
+        const currentLevel = +document.getElementById('maple-current-level').value || 0;
+        const targetLevel  = +document.getElementById('maple-target-level').value  || 0;
+        const currentMaplePct = getMapleIncrease(currentLevel);
+        const targetMaplePct  = getMapleIncrease(targetLevel);
+        // 讀取套用目標開關
+        const applyTarget = document.getElementById('maple-apply-toggle')?.checked;
+        // 根據開關決定計算使用的楓祝百分比
+        const activeMaplePct = applyTarget ? targetMaplePct : 0;
         // 調整欄位（配點修正）
         const adjustMain = +document.getElementById("adjust-main").value || 0;
         const adjustSub1 = +document.getElementById("adjust-sub").value || 0;
@@ -941,16 +1004,36 @@
         let adjSubPoint1 = subPoint1 + adjustSub1;
         let adjSubPoint2 = subPoint2 + adjustSub2;
 
-        // 計算楓祝增幅（僅作用於配點+修正，裝備不受影響），取整數
-        const mapleBonusMain = floor(adjMainPoint * maplePct / 100);
-        const mapleBonusSub1 = floor(adjSubPoint1 * maplePct / 100);
-        const mapleBonusSub2 = floor(adjSubPoint2 * maplePct / 100);
+        // 計算楓祝增幅（僅作用於配點+修正，裝備不受影響），取整數。
+        // 由於左側表格需要顯示目前與目標等級的表攻，這裡不直接計算，後續依據 activeMaplePct 計算。
 
-        // 計算最終主/副屬（加上楓祝與裝備）
-        const finalMain = adjMainPoint + mapleBonusMain + mainEquip;
-        const finalSub1 = adjSubPoint1 + mapleBonusSub1 + subEquip1;
-        const finalSub2 = adjSubPoint2 + mapleBonusSub2 + subEquip2;
-        const finalSubTotal = (wtype === "拳套" || wtype === "短刀") ? (finalSub1 + finalSub2) : finalSub1;
+        // 建立函式以計算指定楓祝百分比下的最終主/副屬與表攻範圍（不含新裝備）。
+        function computeFinalStats(maplePct, includeAdjust = true) {
+          // 配點含修正
+          const baseMain = includeAdjust ? adjMainPoint : mainPoint;
+          const baseSub1 = includeAdjust ? adjSubPoint1 : subPoint1;
+          const baseSub2 = includeAdjust ? adjSubPoint2 : subPoint2;
+          const bonusMain = floor(baseMain * maplePct / 100);
+          const bonusSub1 = floor(baseSub1 * maplePct / 100);
+          const bonusSub2 = floor(baseSub2 * maplePct / 100);
+          const fm = baseMain + bonusMain + mainEquip;
+          const fs1 = baseSub1 + bonusSub1 + subEquip1;
+          const fs2 = baseSub2 + bonusSub2 + subEquip2;
+          const fsTotal = (wtype === "拳套" || wtype === "短刀") ? (fs1 + fs2) : fs1;
+          // 計算最小/最大表攻
+          const baseMax = floor(((fm * maxCoef + fsTotal) * attackPow) / 100);
+          const baseMin = floor(((fm * minCoef * 0.9 * prof + fsTotal) * attackPow) / 100);
+          return { finalMain: fm, finalSubTotal: fsTotal, baseMin, baseMax };
+        }
+
+        // 使用 activeMaplePct 計算當前使用的最終主/副屬與表攻範圍（適用於換裝後與楓祝表攻計算）
+        const activeStats    = computeFinalStats(activeMaplePct, true);
+        const finalMain      = activeStats.finalMain;
+        const finalSubTotal  = activeStats.finalSubTotal;
+        // 提升前表攻（baseMin/baseMax）不套用楓葉祝福，僅使用配點修正與裝備
+        const preStats       = computeFinalStats(activeMaplePct, false); // 使用 activeMaplePct 計算提升前表攻，且不套用配點修正
+        const baseMin        = preStats.baseMin;
+        const baseMax        = preStats.baseMax;
 
         // 當前提升欄位（裝備差值），僅影響裝備
         const attrInc = +document.getElementById("attr-increase").value   || 0;
@@ -964,14 +1047,13 @@
         }
         const atkInc  = +document.getElementById("attack-increase").value || 0;
 
-        // 基本表攻範圍（含楓祝、未加新裝備）
-        const baseMax = floor(((finalMain * maxCoef + finalSubTotal) * attackPow) / 100);
-        const baseMin = floor(((finalMain * minCoef * 0.9 * prof + finalSubTotal) * attackPow) / 100);
+        // 基本表攻範圍（含楓祝、未加新裝備）已由 activeStats.baseMin/baseMax 計算。
 
         // 新裝備加成後的最終主/副屬：只增加裝備差值，不受楓祝影響
+        // 先計算楓祝加成後的主/副屬（activeMaplePct 已作用於 adjMainPoint/adjSubPoints）
         const newMainFinal = finalMain + attrInc;
-        const newSub1Final = finalSub1 + subInc1;
-        const newSub2Final = finalSub2 + subInc2;
+        const newSub1Final = (wtype === "拳套" || wtype === "短刀") ? ( (adjSubPoint1 + floor(adjSubPoint1 * activeMaplePct / 100)) + subEquip1 + subInc1 ) : ( (adjSubPoint1 + floor(adjSubPoint1 * activeMaplePct / 100)) + subEquip1 + subInc1 );
+        const newSub2Final = (wtype === "拳套" || wtype === "短刀") ? ( (adjSubPoint2 + floor(adjSubPoint2 * activeMaplePct / 100)) + subEquip2 + subInc2 ) : 0;
         const newSubTotal  = (wtype === "拳套" || wtype === "短刀") ? (newSub1Final + newSub2Final) : newSub1Final;
         const newAtkPow    = attackPow + atkInc;
 
@@ -988,20 +1070,14 @@
         const attrDelta = ((((newMainFinal + 1) * maxCoef + newSubTotal) * newAtkPow) / 100) - (((newMainFinal * maxCoef + newSubTotal) * newAtkPow) / 100);
         const ratio = attrDelta ? (atkDelta / attrDelta).toFixed(2) : "";
 
-        // 計算楓祝提升表攻效益：與無楓祝時相比
-        // 無楓祝時的主/副屬：無楓祝時不含楓祝增幅，但包含配點修正與裝備
-        const noMapleMain = (mainPoint + adjustMain) + mainEquip;
-        const noMapleSub1 = (subPoint1 + adjustSub1) + subEquip1;
-        const noMapleSub2 = (subPoint2 + adjustSub2) + subEquip2;
-        const noMapleSubTotal = (wtype === "拳套" || wtype === "短刀") ? (noMapleSub1 + noMapleSub2) : noMapleSub1;
-        const noMapleMax = floor(((noMapleMain * maxCoef + noMapleSubTotal) * attackPow) / 100);
-        const mapleRate = noMapleMax ? ((baseMax - noMapleMax) / noMapleMax * 100) : 0;
+        // 計算楓祝前後表攻：使用目前與目標等級個別計算
+        const currentStats = computeFinalStats(currentMaplePct, true);
+        const targetStats  = computeFinalStats(targetMaplePct, true);
+        const mapleIncRate = currentStats.baseMax ? ((targetStats.baseMax - currentStats.baseMax) / currentStats.baseMax * 100) : 0;
 
-        // 更新結果表格
+        // 更新結果表格 (右側)
         document.getElementById("pre-range").textContent  = `${baseMin}~${baseMax}`;
         document.getElementById("post-range").textContent = `${newMin}~${newMax}`;
-        // 楓祝表攻效益%
-        document.getElementById("maple-rate").textContent = `${mapleRate.toFixed(2)}%`;
         // 最大表攻成長顯示符號
         let growthDisplay;
         if (maxGrowth > 0) {
@@ -1014,27 +1090,34 @@
         document.getElementById("max-growth").textContent = growthDisplay;
         document.getElementById("total-rate").textContent = `${totalRate.toFixed(2)}%`;
         document.getElementById("atk-to-attr").textContent = ratio;
-        // 更新楓祝前後表攻顯示：直接顯示於楓葉祝福區域的表格
-        const noMapleMin = floor(((noMapleMain * minCoef * 0.9 * prof + noMapleSubTotal) * attackPow) / 100);
-        const maplePreRangeElem  = document.getElementById('maple-pre-range');
-        const maplePostRangeElem = document.getElementById('maple-post-range');
-        const maplerate = document.getElementById('maple-rate')
-        if (maplePreRangeElem)  maplePreRangeElem.textContent  = `${noMapleMin}~${noMapleMax}`;
-        if (maplePostRangeElem) maplePostRangeElem.textContent = `${baseMin}~${baseMax}`;
 
-        // 更新配點修正表格
+        // 更新楓葉祝福表格（左側）
+        const curRangeElem  = document.getElementById('maple-current-range');
+        const tgtRangeElem  = document.getElementById('maple-target-range');
+        const incRateElem   = document.getElementById('maple-increase-rate');
+        if (curRangeElem) curRangeElem.textContent = `${currentStats.baseMin}~${currentStats.baseMax}`;
+        if (tgtRangeElem) tgtRangeElem.textContent = `${targetStats.baseMin}~${targetStats.baseMax}`;
+        if (incRateElem)  incRateElem.textContent  = `${mapleIncRate.toFixed(2)}%`;
+
+        // 更新配點修正表格，使用 activeMaplePct
         if (typeof updatePointAdjustTable === "function") {
-          updatePointAdjustTable();
+          updatePointAdjustTable(activeMaplePct);
         }
 
-        saveData(); // 每次算完都存一次
+        // 每次算完都存一次
+        saveData();
+        // 計算後調整左右欄位高度保持對稱
+        if (typeof adjustColumnHeights === 'function') {
+          // 等待 DOM 更新完成再調整
+          setTimeout(adjustColumnHeights, 0);
+        }
       }
 
       /*───────────────────
         自訂函式：更新配點修正顯示表格
         顯示各屬性配點+裝備、楓祝增幅與總值
       ───────────────────*/
-      function updatePointAdjustTable () {
+      function updatePointAdjustTable (maplePctParam) {
         const tbody = document.querySelector('#point-adjust-table tbody');
         if (!tbody) return;
         // 清空現有內容
@@ -1054,8 +1137,18 @@
         const subStrEquip = +document.getElementById('sub-attr-str-equip').value || 0;
         const subAgiPoint = +document.getElementById('sub-attr-agi-point').value || 0;
         const subAgiEquip = +document.getElementById('sub-attr-agi-equip').value || 0;
-        const mapleLevel = +document.getElementById('maple-level').value || 0;
-        const maplePct = getMapleIncrease(mapleLevel);
+        // 取得楓祝百分比：若有傳入值則使用，否則從目前與目標等級依套用開關判定
+        let maplePct;
+        if (typeof maplePctParam === 'number') {
+          maplePct = maplePctParam;
+        } else {
+          const curLv = +document.getElementById('maple-current-level').value || 0;
+          const tgtLv = +document.getElementById('maple-target-level').value || 0;
+          const applyTarget = document.getElementById('maple-apply-toggle')?.checked;
+          const curPct = getMapleIncrease(curLv);
+          const tgtPct = getMapleIncrease(tgtLv);
+          maplePct = applyTarget ? tgtPct : curPct;
+        }
         // 讀取裝備差值（新舊裝備差）以預測最終裝備值
         const attrInc    = +document.getElementById('attr-increase').value || 0;
         const subInc     = +document.getElementById('sub-increase').value || 0;
@@ -1104,8 +1197,10 @@
         "sub-attr-str-equip",
         "sub-attr-agi-point",
         "sub-attr-agi-equip",
-        // 楓葉祝福等級（配點修正不存儲，避免重整後記錄）
-        "maple-level",
+        // 楓葉祝福等級：目前等級、目標等級與套用開關
+        "maple-current-level",
+        "maple-target-level",
+        "maple-apply-toggle",
         // 攻擊力與其他基本欄位
         "attack-power",
         "proficiency",
@@ -1139,8 +1234,14 @@
       // 初始化
       window.addEventListener("DOMContentLoaded", () => {
         populateWeaponOptions();          // ① 先建立武器下拉選單
-        populateMapleSelect();            // ② 建立楓葉祝福下拉選單
+        populateMapleSelects();            // ② 建立楓葉祝福下拉選單（目前/目標）
         loadData();                       // ③ 把 localStorage 值灌回所有欄位
+        // 若沒有儲存值，設定楓祝預設值：目前等級 0，目標等級 20
+        const curSel = document.getElementById('maple-current-level');
+        const tgtSel = document.getElementById('maple-target-level');
+        if (curSel && !curSel.value) curSel.value = '0';
+        if (tgtSel && !tgtSel.value) tgtSel.value = '20';
+        updateTargetOptions();             // 更新目標等級選項
         updateWeaponCoefficients();       // ④ 依選項寫入 max/min
         updateAttrHintAndLabels();        // ⑤ 更新屬性說明與標籤
         calculate();                      // ⑥ 重新算一次並更新畫面
@@ -1152,7 +1253,9 @@
           "sub-attr-point", "sub-attr-equip",
           "sub-attr-str-point", "sub-attr-str-equip",
           "sub-attr-agi-point", "sub-attr-agi-equip",
-          "maple-level", "adjust-main", "adjust-sub", "adjust-sub2",
+          // 楓葉祝福目前/目標等級與套用開關
+          "maple-current-level", "maple-target-level", "maple-apply-toggle",
+          "adjust-main", "adjust-sub", "adjust-sub2",
           // 攻擊與熟練度
           "attack-power", "proficiency", "weapon-type",
           "snowflake-check",
@@ -1170,8 +1273,22 @@
         baseInputs.forEach((id) => {
           const elem = document.getElementById(id);
           if (!elem) return;
-          const eventType = elem.type === "checkbox" ? "change" : "input";
-          elem.addEventListener(eventType, calculate);
+          // select 元素使用 change 事件；checkbox 亦用 change，其餘使用 input
+          let eventType;
+          if (elem.tagName === 'SELECT') {
+            eventType = 'change';
+          } else if (elem.type === 'checkbox') {
+            eventType = 'change';
+          } else {
+            eventType = 'input';
+          }
+          elem.addEventListener(eventType, () => {
+            // 若為目前楓祝等級，需更新目標等級選項
+            if (id === 'maple-current-level') {
+              updateTargetOptions();
+            }
+            calculate();
+          });
         });
 
         // 攻擊提升選項（雪花、激勵、攻擊藥丸、章魚燒/龍血）：點擊任一行切換勾選狀態，且彼此互斥
@@ -1288,7 +1405,36 @@
             saveData();
           });
         }
+
+        // 監聽視窗大小改變，以重新調整欄位高度對稱
+        window.addEventListener('resize', () => {
+          if (typeof adjustColumnHeights === 'function') {
+            adjustColumnHeights();
+          }
+        });
       });
+
+      /*───────────────────
+        自訂函式：調整左右欄位保持對稱
+        根據左右欄位內容高度，自動在較矮的欄位下方加上 margin
+      ───────────────────*/
+      function adjustColumnHeights() {
+        const grid = document.querySelector('.grid');
+        if (!grid || grid.children.length < 2) return;
+        const left  = grid.children[0];
+        const right = grid.children[1];
+        // 先重置 margin
+        left.style.marginBottom  = '';
+        right.style.marginBottom = '';
+        // 取得實際高度
+        const leftH  = left.offsetHeight;
+        const rightH = right.offsetHeight;
+        if (leftH > rightH) {
+          right.style.marginBottom = (leftH - rightH) + 'px';
+        } else if (rightH > leftH) {
+          left.style.marginBottom  = (rightH - leftH) + 'px';
+        }
+      }
 
     </script>
   </body>
