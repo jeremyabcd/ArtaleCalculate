@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Artale裝備效益計算機｜Artale表攻計算器</title>
+    <title>Artale裝備效益計算機｜Artale表攻計算機</title>
     <meta name="description" content="輸入角色主屬、攻擊力與武器係數，快速計算Artale角色的最大/最小表攻，並評估主屬與攻擊的換裝效益比例。">
     <link rel="canonical" href="https://jeremyabcd.github.io/ArtaleCalculate/">
     <meta name="robots" content="index, follow">
@@ -49,11 +49,12 @@
         padding: 24px;
       }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 20px;
-      }
+          .grid {
+            display: grid;
+            /* 固定兩欄等寬，使左右區塊對齊，避免出現一邊大片空白 */
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+          }
 
       .form-group {
         display: flex;
@@ -74,6 +75,8 @@
         border-radius: 6px;
         background-color: var(--input-bg);
         transition: border-color 0.2s, box-shadow 0.2s;
+        max-width: 100%;
+        box-sizing: border-box;
       }
 
       .form-group input:focus,
@@ -179,8 +182,9 @@
         /* 在手機螢幕下仍維持三欄排列，但讓欄寬自動縮放以避免格子超出容器 */
         .increase-grid {
           /* 三欄等分，欄寬可小於 100px 時自動縮小 */
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
+           grid-template-columns: repeat(3, minmax(0, 1fr));
+           gap: 8px;
+           overflow-x: auto;  /* 必要時可橫向捲動，避免撐出 */
         }
         /* 手機下：允許格子收縮避免超出容器 */
         .increase-grid .form-group {
@@ -189,8 +193,12 @@
         /* 調整提升區域內的標籤與輸入框字體大小，讓內容在窄螢幕仍易於閱讀 */
         .increase-grid .form-group label {
           font-size: 13px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .increase-grid .form-group input {
+          width: 100%;
           font-size: 14px;
           padding: 8px;
           box-sizing: border-box;
@@ -217,14 +225,54 @@
           display: block;
         }
       }
+
+    /*───────────────────
+      進一步在較小螢幕時調整字體與間距，
+      讓三欄輸入區塊能夠更好地縮放，不會撐出白底容器。
+    ───────────────────*/
+    @media (max-width: 480px) {
+      /* 適度減少欄間距，讓三欄更緊湊 */
+      .increase-grid {
+        gap: 6px;
+      }
+      /* 調整提升區域標籤字體大小 */
+      .increase-grid .form-group label {
+        font-size: 12px;
+      }
+      /* 調整輸入框字體與內邊距，避免被擠壓時內容難以閱讀 */
+      .increase-grid .form-group input {
+        font-size: 12px;
+        padding: 6px;
+      }
+    }
+    .increase-grid,
+    .increase-grid .form-group,
+    .increase-grid .form-group > * { min-width: 0; }
+    
+    .form-group input,
+    .form-group select { width: 100%; max-width: 100%; box-sizing: border-box; }
+    
+    .increase-grid .form-group label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    @media (max-width: 480px) {
+      .increase-grid { gap: 6px; }
+      .increase-grid .form-group label { font-size: 12px; }
+      .increase-grid .form-group input { font-size: 12px; padding: 6px; }
+    }
     </style>
   </head>
   <body>
     <div class="container">
       <h1>Artale裝備效益計算機</h1>
       <p style="text-align: center;">
-      本工具會根據您輸入的角色屬性與武器係數計算最大/最小表攻以及升級後的提升幅度。<br>
-      選擇武器類型後，係數將會自動填入，當輸入值變動時結果會即時更新。
+      <!-- 更新說明：提供使用者更清楚的計算範圍與限制。 -->
+      本計算機以表攻計算讓玩家快速知道攻屬比效益以及換裝表攻提升。<br>
+      DPS、攻速、命中效益、技能內建效果牽涉範圍複雜不在計算範圍內。<br>
+      實戰影響輸出因素眾多，表攻僅供參考，請勿完全盲信。
       </p>
 
       <!-- 輸入區域 -->
@@ -271,8 +319,33 @@
               value="0.6"
             />
           </div>
-          <!-- 主屬性 -->
+
+          <!-- 屬性說明已移除顯示；僅留 JS 更新標籤使用，無實際 UI 輸出 -->
+          <!-- 主屬性：拆分為配點與裝備，左側顯示主屬名稱 -->
           <div class="form-group">
+            <label>主屬性 (配點/裝備)</label>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span id="main-attr-label" style="min-width:32px; font-weight:bold;"></span>
+              <input
+                type="number"
+                id="main-attr-point"
+                min="0"
+                step="1"
+                placeholder="配點"
+                style="flex:1; min-width:0;"
+              />
+              <input
+                type="number"
+                id="main-attr-equip"
+                min="0"
+                step="1"
+                placeholder="裝備"
+                style="flex:1; min-width:0;"
+              />
+            </div>
+          </div>
+          <!-- 保留舊有主屬性輸入欄位以兼容，但隱藏 -->
+          <div class="form-group" style="display:none;">
             <label for="main-attr">主屬性</label>
             <input
               type="number"
@@ -282,43 +355,79 @@
               placeholder="請輸入主屬性數值"
             />
           </div>
-          <!-- 副屬性排在主屬性後面 -->
+          <!-- 副屬性：拆分為配點與裝備；短刀/拳套使用兩組副屬 -->
           <div class="form-group" id="sub-attr-group">
-            <label for="sub-attr">副屬性</label>
-            <!-- 單一副屬性輸入欄位：加入佔位元素保持與雙欄寬度一致 -->
-            <div id="sub-attr-single" style="display:flex; gap:6px; width:100%;">
+            <label>副屬性 (配點/裝備)</label>
+            <!-- 單一副屬性輸入欄位：左側顯示副屬名稱，配點與裝備兩欄 -->
+            <div id="sub-attr-single" style="display:flex; gap:6px; width:100%; align-items:center;">
+              <span id="sub-attr-single-label" style="min-width:32px; font-weight:bold;"></span>
               <input
                 type="number"
-                id="sub-attr"
+                id="sub-attr-point"
                 min="0"
                 step="1"
-                placeholder="請輸入副屬性數值"
+                placeholder="配點"
                 style="flex:1; min-width:0;"
               />
-              <div id="sub-attr-dummy" style="flex:1;"></div>
+              <input
+                type="number"
+                id="sub-attr-equip"
+                min="0"
+                step="1"
+                placeholder="裝備"
+                style="flex:1; min-width:0;"
+              />
             </div>
-            <!-- 拳套/短刀用：力量與敏捷兩個欄位，預設隱藏 -->
+            <!-- 拳套/短刀用：力量與敏捷兩組欄位，左側顯示各副屬名稱，預設隱藏 -->
             <div
               id="sub-attr-dual"
-              style="display:none; width:100%; gap:6px;"
+              style="display:none; width:100%; flex-direction:column; gap:8px;"
             >
-              <input
-                type="number"
-                id="sub-attr-str"
-                min="0"
-                step="1"
-                placeholder="力量"
-                style="flex:1; min-width:0;"
-              />
-              <input
-                type="number"
-                id="sub-attr-agi"
-                min="0"
-                step="1"
-                placeholder="敏捷"
-                style="flex:1; min-width:0;"
-              />
+              <div style="display:flex; gap:6px; align-items:center;">
+                <span id="sub-attr-label1" style="min-width:32px; font-weight:bold;"></span>
+                <input
+                  type="number"
+                  id="sub-attr-str-point"
+                  min="0"
+                  step="1"
+                  placeholder="配點"
+                  style="flex:1; min-width:0;"
+                />
+                <input
+                  type="number"
+                  id="sub-attr-str-equip"
+                  min="0"
+                  step="1"
+                  placeholder="裝備"
+                  style="flex:1; min-width:0;"
+                />
+              </div>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <span id="sub-attr-label2" style="min-width:32px; font-weight:bold;"></span>
+                <input
+                  type="number"
+                  id="sub-attr-agi-point"
+                  min="0"
+                  step="1"
+                  placeholder="配點"
+                  style="flex:1; min-width:0;"
+                />
+                <input
+                  type="number"
+                  id="sub-attr-agi-equip"
+                  min="0"
+                  step="1"
+                  placeholder="裝備"
+                  style="flex:1; min-width:0;"
+                />
+              </div>
             </div>
+          </div>
+          <!-- 保留舊有副屬性輸入欄位以兼容，但隱藏 -->
+          <div style="display:none;">
+            <input type="number" id="sub-attr" />
+            <input type="number" id="sub-attr-str" />
+            <input type="number" id="sub-attr-agi" />
           </div>
           <!-- 攻擊力 -->
           <div class="form-group">
@@ -369,6 +478,38 @@
               <span class="btn-note">章魚燒/龍血(+8攻)</span>
             </div>
           </div>
+          <!-- 楓葉祝福：技能等級選單，僅作用於配點屬性，小數捨去 -->
+          <div class="form-group">
+            <label for="maple-level">楓葉祝福等級</label>
+            <select id="maple-level"></select>
+          </div>
+          <!-- 楓葉祝福說明與表攻顯示 -->
+          <p class="note" style="margin-top:8px;">
+            可選擇等級後套用楓葉祝福，若選擇0則為不使用，建議模擬未來會提升的等級，並套用到配點上會更符合實際情況。<br />
+            目前(2025/8/6)包含國際服在內仍無法取得楓祝30技能書（於皮卡啾掉落），建議模擬時最多選擇20等。<br />
+          </p>
+          <table class="table" id="maple-attack-table" style="width:100%; margin-top:8px; border-collapse: collapse;">
+            <thead>
+              <tr>
+                <th>項目</th>
+                <th>數值</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>楓祝前表攻</td>
+                <td id="maple-pre-range">0~0</td>
+              </tr>
+              <tr>
+                <td>楓祝後表攻</td>
+                <td id="maple-post-range">0~0</td>
+              </tr>
+              <tr>
+                <td>楓祝增幅</td>
+                <td id="maple-rate">0~0</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <div>
@@ -393,7 +534,8 @@
                 <input type="number" id="attr-increase" step="1" placeholder="差值" />
               </div>
             </div>
-            <div class="increase-grid">
+            <!-- 單一副屬提升欄位：默認顯示 -->
+            <div id="sub-increase-single" class="increase-grid">
               <div class="form-group">
                 <label for="old-sub-attr">舊裝備副屬性</label>
                 <input type="number" id="old-sub-attr" step="1" placeholder="原副屬" />
@@ -405,6 +547,37 @@
               <div class="form-group">
                 <label for="sub-increase">副屬性提升量</label>
                 <input type="number" id="sub-increase" step="1" placeholder="差值" />
+              </div>
+            </div>
+            <!-- 拳套/短刀用：力量與敏捷各自的提升欄位，預設隱藏 -->
+            <div id="sub-increase-dual" style="display:none;">
+              <div class="increase-grid">
+                <div class="form-group">
+                  <label for="old-sub-str">舊裝備力量</label>
+                  <input type="number" id="old-sub-str" step="1" placeholder="原力量" />
+                </div>
+                <div class="form-group">
+                  <label for="new-sub-str">新裝備力量</label>
+                  <input type="number" id="new-sub-str" step="1" placeholder="新力量" />
+                </div>
+                <div class="form-group">
+                  <label for="sub-str-increase">力量提升量</label>
+                  <input type="number" id="sub-str-increase" step="1" placeholder="差值" />
+                </div>
+              </div>
+              <div class="increase-grid">
+                <div class="form-group">
+                  <label for="old-sub-agi">舊裝備敏捷</label>
+                  <input type="number" id="old-sub-agi" step="1" placeholder="原敏捷" />
+                </div>
+                <div class="form-group">
+                  <label for="new-sub-agi">新裝備敏捷</label>
+                  <input type="number" id="new-sub-agi" step="1" placeholder="新敏捷" />
+                </div>
+                <div class="form-group">
+                  <label for="sub-agi-increase">敏捷提升量</label>
+                  <input type="number" id="sub-agi-increase" step="1" placeholder="差值" />
+                </div>
               </div>
             </div>
             <div class="increase-grid">
@@ -421,9 +594,44 @@
                 <input type="number" id="attack-increase" step="1" placeholder="差值" />
               </div>
             </div>
-          </div>
-          <!-- 結果顯示表格 -->
-          <table id="summary-table" style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+            </div>
+            <!-- 配點修正區塊：可調整配點屬性增減以套用楓葉祝福，並顯示配點+裝備+楓祝增幅 -->
+            <div id="point-adjust-section" style="margin-top:20px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <h3 style="margin:0;">配點修正</h3>
+                <div class="btn-note">※此處可調整配點以模擬調整溢出屬性等需求</div>
+              </div>
+              <!-- 調整輸入欄位：主屬、副屬，如果為拳套/短刀會顯示第二副屬 -->
+              <div id="point-adjust-inputs" class="increase-grid">
+                <div class="form-group" id="adjust-main-group">
+                  <label for="adjust-main">主屬修正</label>
+                  <input type="number" id="adjust-main" step="1" placeholder="0" />
+                </div>
+                <div class="form-group" id="adjust-sub-group">
+                  <label for="adjust-sub">副屬修正</label>
+                  <input type="number" id="adjust-sub" step="1" placeholder="0" />
+                </div>
+                <div class="form-group" id="adjust-sub2-group" style="visibility:hidden; pointer-events:none;">
+                  <label for="adjust-sub2">第二副屬修正</label>
+                  <input type="number" id="adjust-sub2" step="1" placeholder="0" />
+                </div>
+              </div>
+              <!-- 顯示配點、裝備、配點+裝備與楓祝增幅表格。欄位順序為配點→裝備→配點+裝備→楓祝增幅。 -->
+              <table id="point-adjust-table" style="width:100%; margin-top:15px; border-collapse:collapse;">
+                <thead>
+                  <tr>
+                    <th>屬性</th>
+                    <th>配點</th>
+                    <th>裝備</th>
+                    <th>配點+裝備</th>
+                    <th>楓祝增幅</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <!-- 結果顯示表格 -->
+          <table id="summary-table" style="width: 100%; margin-top: 32px; border-collapse: collapse;">
             <thead>
               <tr>
                 <th>項目</th>
@@ -456,8 +664,8 @@
           </table>
           <!-- 按鈕列：套用新數據按鈕與提示文字 -->
           <div class="btn-row">
-            <button class="custom-btn" id="apply-new-data" type="button">套用新數據</button>
-            <span class="btn-note">※按下按鈕後會將提升數值直接加到原本的能力值中</span>
+            <button class="custom-btn" id="apply-new-data" type="button" style="margin-top:18px;">套用新數據</button>
+            <span class="btn-note" style="margin-top:18px;">※按下按鈕後會將裝備提升數值直接加到原本的能力值中</span>
           </div>
         </div>
       </div>
@@ -483,6 +691,125 @@
         "指虎":   { max: 4.8, min: 4.8 },
         "火槍":   { max: 3.6, min: 3.6 },
       };
+
+      /*───────────────────
+        新增：武器對應的主/副屬性名稱表
+        這用於配點修正表格顯示，不影響計算公式。
+      ───────────────────*/
+      const weaponAttributes = {
+        // 多數近戰武器：主屬 STR、副屬 DEX
+        "單手劍": { main: "STR", sub: ["DEX"] },
+        "雙手劍": { main: "STR", sub: ["DEX"] },
+        "單手斧": { main: "STR", sub: ["DEX"] },
+        "單手棍": { main: "STR", sub: ["DEX"] },
+        "雙手斧": { main: "STR", sub: ["DEX"] },
+        "雙手棍": { main: "STR", sub: ["DEX"] },
+        "矛":     { main: "STR", sub: ["DEX"] },
+        "槍":     { main: "STR", sub: ["DEX"] },
+        // 短刀：主屬 LUK，副屬同時需要 STR 與 DEX
+        "短刀":   { main: "LUK", sub: ["STR", "DEX"] },
+        // 拳套：主屬 LUK，副屬分別 STR 與 DEX
+        "拳套":   { main: "LUK", sub: ["STR", "DEX"] },
+        // 遠程武器：主屬 DEX、副屬 STR
+        "弓":     { main: "DEX", sub: ["STR"] },
+        "弩":     { main: "DEX", sub: ["STR"] },
+        // 指虎：主屬 STR、副屬 DEX
+        "指虎":   { main: "STR", sub: ["DEX"] },
+        // 火槍：主屬 DEX、副屬 STR
+        "火槍":   { main: "DEX", sub: ["STR"] },
+      };
+
+      /*───────────────────
+        新增：楓葉祝福等級對應能力增加百分比
+        每兩級增加 1%，例如 1~2級為1%，3~4級為2%，最高15%。
+      ───────────────────*/
+      function getMapleIncrease(level) {
+        const lv = parseInt(level, 10) || 0;
+        if (lv <= 0) return 0;
+        return Math.floor((lv + 1) / 2);
+      }
+
+      /*───────────────────
+        新增：產生楓葉祝福下拉式選單
+        將 0~30 等級依序加入 select#maple-level
+      ───────────────────*/
+      function populateMapleSelect() {
+        const sel = document.getElementById('maple-level');
+        if (!sel) return;
+        sel.innerHTML = '';
+        for (let i = 0; i <= 30; i++) {
+          const opt = document.createElement('option');
+          opt.value = String(i);
+          opt.textContent = String(i);
+          sel.appendChild(opt);
+        }
+      }
+
+      /*───────────────────
+        新增：更新主/副屬文字提示與輸入欄位的標籤/placeholder
+        根據 weaponAttributes 對應的 main/sub 屬性
+        更新 attr-hint 顯示、各輸入欄位 placeholder，以及配點修正標籤
+      ───────────────────*/
+      function updateAttrHintAndLabels() {
+        const type = document.getElementById('weapon-type').value;
+        const info = weaponAttributes[type] || { main: '主屬', sub: ['副屬'] };
+        // 更新提示文字
+        const hintMain = document.getElementById('hint-main');
+        const hintSub  = document.getElementById('hint-sub');
+        if (hintMain) hintMain.textContent = info.main;
+        if (hintSub)  hintSub.textContent  = info.sub.join(' + ');
+        // 更新主屬顯示文字及 placeholder
+        const mainLabelSpan = document.getElementById('main-attr-label');
+        if (mainLabelSpan) mainLabelSpan.textContent = info.main;
+        const mainPointInput = document.getElementById('main-attr-point');
+        const mainEquipInput = document.getElementById('main-attr-equip');
+        if (mainPointInput) mainPointInput.placeholder = '配點';
+        if (mainEquipInput) mainEquipInput.placeholder = '裝備';
+        // 更新副屬顯示文字及 placeholder
+        const subPointInput = document.getElementById('sub-attr-point');
+        const subEquipInput = document.getElementById('sub-attr-equip');
+        const subStrPointInput = document.getElementById('sub-attr-str-point');
+        const subStrEquipInput = document.getElementById('sub-attr-str-equip');
+        const subAgiPointInput = document.getElementById('sub-attr-agi-point');
+        const subAgiEquipInput = document.getElementById('sub-attr-agi-equip');
+        // 更新顯示在欄位前的標籤
+        const subSingleLabelSpan = document.getElementById('sub-attr-single-label');
+        const label1Span = document.getElementById('sub-attr-label1');
+        const label2Span = document.getElementById('sub-attr-label2');
+        // 更新配點修正標籤
+        const adjustSubLabel  = document.querySelector('#adjust-sub-group label');
+        const adjustSub2Label = document.querySelector('#adjust-sub2-group label');
+        if (info.sub.length > 1) {
+          // 雙副屬：設定兩個副屬名稱
+          if (subStrPointInput) subStrPointInput.placeholder = '配點';
+          if (subStrEquipInput) subStrEquipInput.placeholder = '裝備';
+          if (subAgiPointInput) subAgiPointInput.placeholder = '配點';
+          if (subAgiEquipInput) subAgiEquipInput.placeholder = '裝備';
+          if (label1Span) label1Span.textContent = info.sub[0];
+          if (label2Span) label2Span.textContent = info.sub[1];
+          if (adjustSubLabel)  adjustSubLabel.textContent  = '副屬修正 (' + info.sub[0] + ')';
+          if (adjustSub2Label) adjustSub2Label.textContent = '副屬修正 (' + info.sub[1] + ')';
+          // 顯示第二副屬修正欄位並啟用輸入
+          const adjustSub2Group = document.getElementById('adjust-sub2-group');
+          if (adjustSub2Group) {
+            adjustSub2Group.style.visibility   = 'visible';
+            adjustSub2Group.style.pointerEvents = 'auto';
+          }
+        } else {
+          // 單副屬
+          if (subPointInput) subPointInput.placeholder = '配點';
+          if (subEquipInput) subEquipInput.placeholder = '裝備';
+          if (subSingleLabelSpan) subSingleLabelSpan.textContent = info.sub[0];
+          if (adjustSubLabel) adjustSubLabel.textContent = '副屬修正';
+          if (adjustSub2Label) adjustSub2Label.textContent = '第二副屬修正';
+          // 隱藏第二副屬修正欄位但保留格位，並禁用輸入
+          const adjustSub2Group = document.getElementById('adjust-sub2-group');
+          if (adjustSub2Group) {
+            adjustSub2Group.style.visibility   = 'hidden';
+            adjustSub2Group.style.pointerEvents = 'none';
+          }
+        }
+      }
 
       /*───────────────────
         ② 產生武器下拉選單
@@ -517,6 +844,10 @@
         if (typeof updateSubAttrFields === "function") {
           updateSubAttrFields();
         }
+        // 更新提示與標籤/placeholder
+        if (typeof updateAttrHintAndLabels === 'function') {
+          updateAttrHintAndLabels();
+        }
       }
 
       /*───────────────────
@@ -528,20 +859,31 @@
         自訂函式：根據武器類型切換副屬欄位
         ───────────────────*/
       function updateSubAttrFields () {
+        // 根據武器類型切換副屬性相關區塊顯示
         const type = document.getElementById("weapon-type").value;
-        const single = document.getElementById("sub-attr-single");
-        const dual   = document.getElementById("sub-attr-dual");
-        if (!single || !dual) return;
+        const singleInput = document.getElementById("sub-attr-single");
+        const dualInput   = document.getElementById("sub-attr-dual");
+        const incSingle   = document.getElementById("sub-increase-single");
+        const incDual     = document.getElementById("sub-increase-dual");
+        const adjustSub2Group = document.getElementById("adjust-sub2-group");
         if (type === "拳套" || type === "短刀") {
-          // 拳套/短刀：顯示雙欄，隱藏單欄
-          if (single) single.style.display = "none";
-          if (dual) dual.style.display   = "flex";
+          // 拳套與短刀使用兩個副屬
+          if (singleInput) singleInput.style.display = "none";
+          if (dualInput)   dualInput.style.display   = "flex";
+          if (incSingle)   incSingle.style.display   = "none";
+          if (incDual)     incDual.style.display     = "block";
+          // 第三欄保留格位，使用 visibility 控制於 updateAttrHintAndLabels()
         } else {
-          // 其他武器：顯示單欄，隱藏雙欄。將佔位元素隱藏，使輸入格全寬。
-          if (single) single.style.display = "flex";
-          if (dual) dual.style.display   = "none";
-          const dummy = document.getElementById("sub-attr-dummy");
-          if (dummy) dummy.style.display = "none";
+          // 其他武器使用單一副屬
+          if (singleInput) singleInput.style.display = "flex";
+          if (dualInput)   dualInput.style.display   = "none";
+          if (incSingle)   incSingle.style.display   = "grid";
+          if (incDual)     incDual.style.display     = "none";
+          // 第三欄保留格位，使用 visibility 控制於 updateAttrHintAndLabels()
+        }
+        // 更新提示與標籤/placeholder
+        if (typeof updateAttrHintAndLabels === 'function') {
+          updateAttrHintAndLabels();
         }
       }
 
@@ -549,96 +891,227 @@
         ⑤ 主計算函式
       ───────────────────*/
       function calculate () {
-        // 每次計算前依武器類型切換副屬欄位，確保顯示正確
+        // 每次計算前依武器類型切換副屬欄位
         if (typeof updateSubAttrFields === "function") {
           updateSubAttrFields();
         }
 
-        /* 基本欄位 ───*/
-        const mainAttr  = +document.getElementById("main-attr").value  || 0;
-        // 根據武器類型決定副屬性
-        let subAttr;
-        const wtype = document.getElementById("weapon-type").value;
-        if (wtype === "拳套" || wtype === "短刀") {
-          const strVal = +document.getElementById("sub-attr-str").value || 0;
-          const agiVal = +document.getElementById("sub-attr-agi").value || 0;
-          subAttr = strVal + agiVal;
-        } else {
-          subAttr = +document.getElementById("sub-attr").value || 0;
-        }
-        let attackPow = +document.getElementById("attack-power").value || 0; // ←用 let 才能改值
-        const prof      = +document.getElementById("proficiency").value || 0;
-        const maxCoef   = +document.getElementById("max-coef").value   || 0;
-        const minCoef   = +document.getElementById("min-coef").value   || 0;
+        // 讀取武器係數與熟練度
+        const maxCoef = +document.getElementById("max-coef").value   || 0;
+        const minCoef = +document.getElementById("min-coef").value   || 0;
+        const prof    = +document.getElementById("proficiency").value || 0;
 
-        /* 是否勾選「雪花 +20」 */
+        // 基礎攻擊力（包括雪花與互斥藥水）
+        let attackPow = +document.getElementById("attack-power").value || 0;
         if (document.getElementById("snowflake-check").checked) attackPow += 20;
-        // 新增互斥攻擊提升選項：根據勾選狀態加上對應攻擊力
-        const motChk   = document.getElementById("boost-motivation-check");
-        const pillChk  = document.getElementById("boost-pill-check");
-        const takoChk  = document.getElementById("boost-takoyaki-check");
+        const motChk  = document.getElementById("boost-motivation-check");
+        const pillChk = document.getElementById("boost-pill-check");
+        const takoChk = document.getElementById("boost-takoyaki-check");
         if (motChk && motChk.checked) attackPow += 10;
         if (pillChk && pillChk.checked) attackPow += 5;
         if (takoChk && takoChk.checked) attackPow += 8;
 
-        /* 提升欄位 ───*/
+        // 讀取配點與裝備值
+        const mainPoint = +document.getElementById("main-attr-point").value || 0;
+        const mainEquip = +document.getElementById("main-attr-equip").value || 0;
+        const mapleLevel = +document.getElementById("maple-level").value || 0;
+        const maplePct = getMapleIncrease(mapleLevel); // 0~15 代表百分比
+        // 調整欄位（配點修正）
+        const adjustMain = +document.getElementById("adjust-main").value || 0;
+        const adjustSub1 = +document.getElementById("adjust-sub").value || 0;
+        const adjustSub2 = +document.getElementById("adjust-sub2").value || 0;
+
+        // 副屬性配點與裝備
+        const wtype   = document.getElementById("weapon-type").value;
+        let subPoint1 = 0, subEquip1 = 0;
+        let subPoint2 = 0, subEquip2 = 0;
+        if (wtype === "拳套" || wtype === "短刀") {
+          // 力量為第一副屬，敏捷為第二副屬
+          subPoint1 = +document.getElementById("sub-attr-str-point").value || 0;
+          subEquip1 = +document.getElementById("sub-attr-str-equip").value || 0;
+          subPoint2 = +document.getElementById("sub-attr-agi-point").value || 0;
+          subEquip2 = +document.getElementById("sub-attr-agi-equip").value || 0;
+        } else {
+          subPoint1 = +document.getElementById("sub-attr-point").value || 0;
+          subEquip1 = +document.getElementById("sub-attr-equip").value || 0;
+        }
+
+        // 套用配點修正
+        let adjMainPoint = mainPoint + adjustMain;
+        let adjSubPoint1 = subPoint1 + adjustSub1;
+        let adjSubPoint2 = subPoint2 + adjustSub2;
+
+        // 計算楓祝增幅（僅作用於配點+修正，裝備不受影響），取整數
+        const mapleBonusMain = floor(adjMainPoint * maplePct / 100);
+        const mapleBonusSub1 = floor(adjSubPoint1 * maplePct / 100);
+        const mapleBonusSub2 = floor(adjSubPoint2 * maplePct / 100);
+
+        // 計算最終主/副屬（加上楓祝與裝備）
+        const finalMain = adjMainPoint + mapleBonusMain + mainEquip;
+        const finalSub1 = adjSubPoint1 + mapleBonusSub1 + subEquip1;
+        const finalSub2 = adjSubPoint2 + mapleBonusSub2 + subEquip2;
+        const finalSubTotal = (wtype === "拳套" || wtype === "短刀") ? (finalSub1 + finalSub2) : finalSub1;
+
+        // 當前提升欄位（裝備差值），僅影響裝備
         const attrInc = +document.getElementById("attr-increase").value   || 0;
-        const subInc  = +document.getElementById("sub-increase").value    || 0;
+        // 副屬提升；根據武器類型讀取正確欄位
+        let subInc1 = 0, subInc2 = 0;
+        if (wtype === "拳套" || wtype === "短刀") {
+          subInc1 = +document.getElementById("sub-str-increase").value || 0;
+          subInc2 = +document.getElementById("sub-agi-increase").value || 0;
+        } else {
+          subInc1 = +document.getElementById("sub-increase").value || 0;
+        }
         const atkInc  = +document.getElementById("attack-increase").value || 0;
 
-        /* 基本 / 新值 */
-        const baseMax = floor(((mainAttr * maxCoef + subAttr) * attackPow) / 100);
-        const baseMin = floor(((mainAttr * minCoef * 0.9 * prof + subAttr) * attackPow) / 100);
+        // 基本表攻範圍（含楓祝、未加新裝備）
+        const baseMax = floor(((finalMain * maxCoef + finalSubTotal) * attackPow) / 100);
+        const baseMin = floor(((finalMain * minCoef * 0.9 * prof + finalSubTotal) * attackPow) / 100);
 
-        const newMain = mainAttr + attrInc;
-        const newSub  = subAttr + subInc;
-        const newAtk  = attackPow + atkInc;
+        // 新裝備加成後的最終主/副屬：只增加裝備差值，不受楓祝影響
+        const newMainFinal = finalMain + attrInc;
+        const newSub1Final = finalSub1 + subInc1;
+        const newSub2Final = finalSub2 + subInc2;
+        const newSubTotal  = (wtype === "拳套" || wtype === "短刀") ? (newSub1Final + newSub2Final) : newSub1Final;
+        const newAtkPow    = attackPow + atkInc;
 
-        const newMax  = floor(((newMain * maxCoef + newSub) * newAtk) / 100);
-        const newMin  = floor(((newMain * minCoef * 0.9 * prof + newSub) * newAtk) / 100);
+        // 換裝後表攻
+        const newMax  = floor(((newMainFinal * maxCoef + newSubTotal) * newAtkPow) / 100);
+        const newMin  = floor(((newMainFinal * minCoef * 0.9 * prof + newSubTotal) * newAtkPow) / 100);
 
-        /* 其他計算 */
-        const maxGrowth   = newMax - baseMax;
-        const totalRate   = baseMax ? (maxGrowth / baseMax * 100) : 0;
+        // 最大表攻增長與總增幅
+        const maxGrowth = newMax - baseMax;
+        const totalRate = baseMax ? (maxGrowth / baseMax * 100) : 0;
 
-        // 1 攻擊 ≒ ? 主屬
-        const atkΔ = (((newMain * maxCoef + newSub) * (newAtk + 1)) / 100) - (((newMain * maxCoef + newSub) * newAtk) / 100);
-        const attrΔ= ((((newMain + 1) * maxCoef + newSub) * newAtk) / 100) - (((newMain * maxCoef + newSub) * newAtk) / 100);
-        const ratio = attrΔ ? (atkΔ / attrΔ).toFixed(2) : "";
+        // 1攻擊 ≒ ? 主屬（使用換裝後數值計算）
+        const atkDelta  = (((newMainFinal * maxCoef + newSubTotal) * (newAtkPow + 1)) / 100) - (((newMainFinal * maxCoef + newSubTotal) * newAtkPow) / 100);
+        const attrDelta = ((((newMainFinal + 1) * maxCoef + newSubTotal) * newAtkPow) / 100) - (((newMainFinal * maxCoef + newSubTotal) * newAtkPow) / 100);
+        const ratio = attrDelta ? (atkDelta / attrDelta).toFixed(2) : "";
 
-        /* 更新畫面 */
+        // 計算楓祝提升表攻效益：與無楓祝時相比
+        // 無楓祝時的主/副屬：無楓祝時不含楓祝增幅，但包含配點修正與裝備
+        const noMapleMain = (mainPoint + adjustMain) + mainEquip;
+        const noMapleSub1 = (subPoint1 + adjustSub1) + subEquip1;
+        const noMapleSub2 = (subPoint2 + adjustSub2) + subEquip2;
+        const noMapleSubTotal = (wtype === "拳套" || wtype === "短刀") ? (noMapleSub1 + noMapleSub2) : noMapleSub1;
+        const noMapleMax = floor(((noMapleMain * maxCoef + noMapleSubTotal) * attackPow) / 100);
+        const mapleRate = noMapleMax ? ((baseMax - noMapleMax) / noMapleMax * 100) : 0;
+
+        // 更新結果表格
         document.getElementById("pre-range").textContent  = `${baseMin}~${baseMax}`;
         document.getElementById("post-range").textContent = `${newMin}~${newMax}`;
-        // 根據最大表攻成長顯示符號：正值顯示 +，負值顯示 −，零則僅顯示 0
+        // 楓祝表攻效益%
+        document.getElementById("maple-rate").textContent = `${mapleRate.toFixed(2)}%`;
+        // 最大表攻成長顯示符號
         let growthDisplay;
         if (maxGrowth > 0) {
           growthDisplay = `+${maxGrowth}`;
         } else if (maxGrowth < 0) {
-          growthDisplay = `${maxGrowth}`; // 負數已包含負號
+          growthDisplay = `${maxGrowth}`;
         } else {
           growthDisplay = "0";
         }
         document.getElementById("max-growth").textContent = growthDisplay;
         document.getElementById("total-rate").textContent = `${totalRate.toFixed(2)}%`;
-        document.getElementById("atk-to-attr").textContent= ratio;
+        document.getElementById("atk-to-attr").textContent = ratio;
+        // 更新楓祝前後表攻顯示：直接顯示於楓葉祝福區域的表格
+        const noMapleMin = floor(((noMapleMain * minCoef * 0.9 * prof + noMapleSubTotal) * attackPow) / 100);
+        const maplePreRangeElem  = document.getElementById('maple-pre-range');
+        const maplePostRangeElem = document.getElementById('maple-post-range');
+        const maplerate = document.getElementById('maple-rate')
+        if (maplePreRangeElem)  maplePreRangeElem.textContent  = `${noMapleMin}~${noMapleMax}`;
+        if (maplePostRangeElem) maplePostRangeElem.textContent = `${baseMin}~${baseMax}`;
 
-        saveData();                // ← 每次算完都存一次
+        // 更新配點修正表格
+        if (typeof updatePointAdjustTable === "function") {
+          updatePointAdjustTable();
+        }
+
+        saveData(); // 每次算完都存一次
+      }
+
+      /*───────────────────
+        自訂函式：更新配點修正顯示表格
+        顯示各屬性配點+裝備、楓祝增幅與總值
+      ───────────────────*/
+      function updatePointAdjustTable () {
+        const tbody = document.querySelector('#point-adjust-table tbody');
+        if (!tbody) return;
+        // 清空現有內容
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        // 判定武器類型與主/副屬名稱
+        const wtype = document.getElementById('weapon-type').value;
+        const attrs = weaponAttributes[wtype] || { main: '主屬', sub: ['副屬'] };
+        // 讀取配點、裝備與修正
+        const mainPoint = +document.getElementById('main-attr-point').value || 0;
+        const mainEquip = +document.getElementById('main-attr-equip').value || 0;
+        const adjustMain = +document.getElementById('adjust-main').value || 0;
+        const subPoint = +document.getElementById('sub-attr-point').value || 0;
+        const subEquip = +document.getElementById('sub-attr-equip').value || 0;
+        const adjustSub1 = +document.getElementById('adjust-sub').value || 0;
+        const adjustSub2 = +document.getElementById('adjust-sub2').value || 0;
+        const subStrPoint = +document.getElementById('sub-attr-str-point').value || 0;
+        const subStrEquip = +document.getElementById('sub-attr-str-equip').value || 0;
+        const subAgiPoint = +document.getElementById('sub-attr-agi-point').value || 0;
+        const subAgiEquip = +document.getElementById('sub-attr-agi-equip').value || 0;
+        const mapleLevel = +document.getElementById('maple-level').value || 0;
+        const maplePct = getMapleIncrease(mapleLevel);
+        // 讀取裝備差值（新舊裝備差）以預測最終裝備值
+        const attrInc    = +document.getElementById('attr-increase').value || 0;
+        const subInc     = +document.getElementById('sub-increase').value || 0;
+        const subStrInc  = +document.getElementById('sub-str-increase').value || 0;
+        const subAgiInc  = +document.getElementById('sub-agi-increase').value || 0;
+        // 定義輔助函式用來填入表格：顯示配點、裝備與楓祝增幅
+        function appendRow(name, point, equip, adjust, inc) {
+          const adjPoint = point + adjust;
+          // 楓祝增幅僅作用於配點（含修正），捨去小數
+          const mapleBonus = floor(adjPoint * maplePct / 100);
+          const equipProjected = equip + (inc || 0);
+          // 配點+裝備：配點(含修正) + 裝備預測值
+          const total = adjPoint + equipProjected;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${name}</td><td>${adjPoint}</td><td>${equipProjected}</td><td>${total}</td><td>${mapleBonus}</td>`;
+          tbody.appendChild(tr);
+        }
+        // 主屬
+        appendRow(attrs.main, mainPoint, mainEquip, adjustMain, attrInc);
+        // 副屬
+        if (wtype === '拳套' || wtype === '短刀') {
+          // 雙副屬：力量與敏捷
+          appendRow(attrs.sub[0], subStrPoint, subStrEquip, adjustSub1, subStrInc);
+          appendRow(attrs.sub[1], subAgiPoint, subAgiEquip, adjustSub2, subAgiInc);
+        } else {
+          // 單副屬
+          appendRow(attrs.sub[0], subPoint, subEquip, adjustSub1, subInc);
+        }
       }
 
       /*───────────────────
         ⑥ 儲存 / 載入（只存左邊基本欄位＋雪花與武器）
       ───────────────────*/
       const STORE_KEYS = [
+        // 舊欄位保留以兼容
         "main-attr",
         "sub-attr",
+        "sub-attr-str",
+        "sub-attr-agi",
+        // 新欄位：配點與裝備
+        "main-attr-point",
+        "main-attr-equip",
+        "sub-attr-point",
+        "sub-attr-equip",
+        "sub-attr-str-point",
+        "sub-attr-str-equip",
+        "sub-attr-agi-point",
+        "sub-attr-agi-equip",
+        // 楓葉祝福等級（配點修正不存儲，避免重整後記錄）
+        "maple-level",
+        // 攻擊力與其他基本欄位
         "attack-power",
         "proficiency",
         "weapon-type",
         "snowflake-check",
-        // 新增兩個副屬欄位供拳套/短刀使用
-        "sub-attr-str",
-        "sub-attr-agi",
-        // 三個互斥攻擊選項
+        // 互斥攻擊提升選項
         "boost-motivation-check",
         "boost-pill-check",
         "boost-takoyaki-check"
@@ -665,36 +1138,34 @@
 
       // 初始化
       window.addEventListener("DOMContentLoaded", () => {
-        populateWeaponOptions();          // ① 先建立下拉選單
-        loadData();                       // ② 把 localStorage 值灌回所有欄位
-        updateWeaponCoefficients();       // ③ 依選項寫入 max/min
-        calculate();                      // ④ 重新算一次並更新畫面
+        populateWeaponOptions();          // ① 先建立武器下拉選單
+        populateMapleSelect();            // ② 建立楓葉祝福下拉選單
+        loadData();                       // ③ 把 localStorage 值灌回所有欄位
+        updateWeaponCoefficients();       // ④ 依選項寫入 max/min
+        updateAttrHintAndLabels();        // ⑤ 更新屬性說明與標籤
+        calculate();                      // ⑥ 重新算一次並更新畫面
         // 綁定事件
         // 基礎輸入與提升區域欄位，輸入變動即重新計算
         const baseInputs = [
-          // 基本欄位
-          "main-attr",
-          "attack-power",
-          "proficiency",
-          "sub-attr",
+          // 新版基本欄位：配點、裝備與楓祝/修正
+          "main-attr-point", "main-attr-equip",
+          "sub-attr-point", "sub-attr-equip",
+          "sub-attr-str-point", "sub-attr-str-equip",
+          "sub-attr-agi-point", "sub-attr-agi-equip",
+          "maple-level", "adjust-main", "adjust-sub", "adjust-sub2",
+          // 攻擊與熟練度
+          "attack-power", "proficiency", "weapon-type",
           "snowflake-check",
-          // 拳套/短刀使用的雙副屬欄位
-          "sub-attr-str",
-          "sub-attr-agi",
-          // 互斥攻擊提升選項勾選框
-          "boost-motivation-check",
-          "boost-pill-check",
-          "boost-takoyaki-check",
+          // 互斥攻擊提升選項
+          "boost-motivation-check", "boost-pill-check", "boost-takoyaki-check",
+          // 舊欄位（兼容）
+          "main-attr", "sub-attr", "sub-attr-str", "sub-attr-agi",
           // 提升區原值、新值與差值
-          "old-main-attr",
-          "new-main-attr",
-          "attr-increase",
-          "old-sub-attr",
-          "new-sub-attr",
-          "sub-increase",
-          "old-attack",
-          "new-attack",
-          "attack-increase"
+          "old-main-attr", "new-main-attr", "attr-increase",
+          "old-sub-attr", "new-sub-attr", "sub-increase",
+          "old-sub-str", "new-sub-str", "sub-str-increase",
+          "old-sub-agi", "new-sub-agi", "sub-agi-increase",
+          "old-attack", "new-attack", "attack-increase"
         ];
         baseInputs.forEach((id) => {
           const elem = document.getElementById(id);
@@ -728,8 +1199,11 @@
          document.getElementById("weapon-type")
           .addEventListener("change", () => {
             updateWeaponCoefficients();
-            calculate();            // ← 若想選武器即時重算，要保留
+            updateAttrHintAndLabels();
+            calculate();            // ← 選武器即時重算
           });
+
+        // 移除楓祝前後比較開關：直接在結果表格顯示前後表攻
 
         // 提升區域：當原值或新值變更時自動計算差值
         function bindDiff(oldId, newId, diffId) {
@@ -752,7 +1226,11 @@
         // 主屬提升量
         bindDiff("old-main-attr", "new-main-attr", "attr-increase");
         // 副屬提升量
+        // 單副屬：原副屬、新副屬、差值
         bindDiff("old-sub-attr", "new-sub-attr", "sub-increase");
+        // 雙副屬：力量與敏捷各自
+        bindDiff("old-sub-str", "new-sub-str", "sub-str-increase");
+        bindDiff("old-sub-agi", "new-sub-agi", "sub-agi-increase");
         // 攻擊力提升量
         bindDiff("old-attack", "new-attack", "attack-increase");
 
@@ -760,32 +1238,51 @@
         const applyBtn = document.getElementById("apply-new-data");
         if (applyBtn) {
           applyBtn.addEventListener("click", () => {
-            const mainAttrInput = document.getElementById("main-attr");
-            const subAttrInput = document.getElementById("sub-attr");
-            const attackInput = document.getElementById("attack-power");
+            // 依據武器類型將裝備差值套用至對應的裝備欄位
+            const wtype = document.getElementById("weapon-type").value;
             const attrInc = parseFloat(document.getElementById("attr-increase").value) || 0;
-            const subInc = parseFloat(document.getElementById("sub-increase").value) || 0;
-            const atkInc = parseFloat(document.getElementById("attack-increase").value) || 0;
+            const atkInc  = parseFloat(document.getElementById("attack-increase").value) || 0;
+            // 主屬裝備欄位
+            const mainEquipInput = document.getElementById("main-attr-equip");
+            if (mainEquipInput) mainEquipInput.value = (parseFloat(mainEquipInput.value) || 0) + attrInc;
+            // 更新舊欄位以兼容
+            const mainAttrInput = document.getElementById("main-attr");
             if (mainAttrInput) mainAttrInput.value = (parseFloat(mainAttrInput.value) || 0) + attrInc;
-            if (subAttrInput) subAttrInput.value = (parseFloat(subAttrInput.value) || 0) + subInc;
+            // 副屬裝備欄位
+            if (wtype === "拳套" || wtype === "短刀") {
+              const subStrInc = parseFloat(document.getElementById("sub-str-increase").value) || 0;
+              const subAgiInc = parseFloat(document.getElementById("sub-agi-increase").value) || 0;
+              const subStrEquip = document.getElementById("sub-attr-str-equip");
+              const subAgiEquip = document.getElementById("sub-attr-agi-equip");
+              if (subStrEquip) subStrEquip.value = (parseFloat(subStrEquip.value) || 0) + subStrInc;
+              if (subAgiEquip) subAgiEquip.value = (parseFloat(subAgiEquip.value) || 0) + subAgiInc;
+              // 更新舊欄位
+              const oldStr = document.getElementById("sub-attr-str");
+              const oldAgi = document.getElementById("sub-attr-agi");
+              if (oldStr) oldStr.value = (parseFloat(oldStr.value) || 0) + subStrInc;
+              if (oldAgi) oldAgi.value = (parseFloat(oldAgi.value) || 0) + subAgiInc;
+            } else {
+              const subInc = parseFloat(document.getElementById("sub-increase").value) || 0;
+              const subEquipInput = document.getElementById("sub-attr-equip");
+              if (subEquipInput) subEquipInput.value = (parseFloat(subEquipInput.value) || 0) + subInc;
+              const oldSubInput = document.getElementById("sub-attr");
+              if (oldSubInput) oldSubInput.value = (parseFloat(oldSubInput.value) || 0) + subInc;
+            }
+            // 攻擊力增加
+            const attackInput = document.getElementById("attack-power");
             if (attackInput) attackInput.value = (parseFloat(attackInput.value) || 0) + atkInc;
             // 清空提升量與原/新欄位
             const clearIds = [
-              "attr-increase",
-              "sub-increase",
-              "attack-increase",
-              "old-main-attr",
-              "new-main-attr",
-              "old-sub-attr",
-              "new-sub-attr",
-              "old-attack",
-              "new-attack",
+              "attr-increase", "sub-increase", "sub-str-increase", "sub-agi-increase", "attack-increase",
+              "old-main-attr", "new-main-attr",
+              "old-sub-attr", "new-sub-attr",
+              "old-sub-str", "new-sub-str",
+              "old-sub-agi", "new-sub-agi",
+              "old-attack", "new-attack"
             ];
             clearIds.forEach((cid) => {
               const elem = document.getElementById(cid);
-              if (elem) {
-                elem.value = "";
-              }
+              if (elem) elem.value = "";
             });
             calculate();
             saveData();
