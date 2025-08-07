@@ -810,6 +810,9 @@
       function updateAttrHintAndLabels() {
         const type = document.getElementById('weapon-type').value;
         const info = weaponAttributes[type] || { main: '主屬', sub: ['副屬'] };
+         /* === 新增：更新「主屬修正」標籤文字 === */
+        const adjustMainLabel = document.querySelector('#adjust-main-group label');
+        if (adjustMainLabel) adjustMainLabel.textContent = '主屬修正 (' + info.main + ')';
         // 更新提示文字
         const hintMain = document.getElementById('hint-main');
         const hintSub  = document.getElementById('hint-sub');
@@ -852,22 +855,27 @@
             adjustSub2Group.style.visibility   = 'visible';
             adjustSub2Group.style.pointerEvents = 'auto';
           }
-          else {
-          // 單副屬
-          if (subPointInput) subPointInput.placeholder = '配點';
-          if (subEquipInput) subEquipInput.placeholder = '裝備';
-          if (subSingleLabelSpan) subSingleLabelSpan.textContent = info.sub[0];
-          if (adjustSubLabel) adjustSubLabel.textContent = '副屬修正';
-          if (adjustSub2Label) adjustSub2Label.textContent = '第二副屬修正';
-          // 隱藏第二副屬修正欄位但保留格位，並禁用輸入
-          const adjustSub2Group = document.getElementById('adjust-sub2-group');
-          if (adjustSub2Group) {
-            adjustSub2Group.style.visibility   = 'hidden';
-            adjustSub2Group.style.pointerEvents = 'none';
+        }
+        else {
+          /* 單副屬 → 隱藏第二副屬欄位、清空其值 */
+
+            if (adjustSubLabel)  adjustSubLabel.textContent  = '副屬修正 (' + info.sub[0] + ')';
+            if (subPointInput)       subPointInput.placeholder  = '配點';
+            if (subEquipInput)       subEquipInput.placeholder  = '裝備';
+            if (subSingleLabelSpan)  subSingleLabelSpan.textContent = info.sub[0];
+            if (subStrPointInput) subStrPointInput.value = '';
+            if (subStrEquipInput) subStrEquipInput.value = '';
+            if (subAgiPointInput) subAgiPointInput.value = '';
+            if (subAgiEquipInput) subAgiEquipInput.value = '';
+          
+            const adjustSub2Group = document.getElementById('adjust-sub2-group');
+            if (adjustSub2Group) {
+              adjustSub2Group.style.visibility   = 'hidden';
+              adjustSub2Group.style.pointerEvents = 'none';
+            }
           }
-        }
-        }
       }
+      
       /*───────────────────
         新增：根據武器類型更新右側提升區的欄位標籤與 placeholder
         主屬與副屬名稱會以實際屬性取代泛稱，例如 STR、DEX。
@@ -922,6 +930,22 @@
           if (incSubLabel) incSubLabel.textContent = subNames[0] + '提升量';
           if (oldSubInput) oldSubInput.placeholder = '原' + subNames[0];
           if (newSubInput) newSubInput.placeholder = '新' + subNames[0];
+          // ① 隱藏第二副屬三列（力量/敏捷那三列）
+          const dualRows = document.querySelectorAll('.dual-sub-row');
+          dualRows.forEach(r => (r.style.display = 'none'));
+
+          // ② 清空第二副屬欄位殘留值
+          [
+            'old-sub-str', 'new-sub-str', 'sub-str-increase',
+            'old-sub-agi', 'new-sub-agi', 'sub-agi-increase'
+          ].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            // 如果是 <td> / <span> 顯示值
+            if ('textContent' in el) el.textContent = '';
+            // 如果是 <input> 值
+            if ('value' in el) el.value = '';
+          });
         }
       
       } 
