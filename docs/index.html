@@ -145,6 +145,7 @@
         cursor: pointer;
         transition: background-color 0.2s, box-shadow 0.2s;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        flex-shrink: 0;          /* ★ 新增：禁止 flex 把它縮窄 */
       }
 
       .custom-btn:hover {
@@ -437,7 +438,7 @@
               id="attack-power"
               min="0"
               step="1"
-              placeholder="請輸入攻擊力(武器+手套+飛鏢/箭矢/子彈)"
+              placeholder="請輸入攻擊力(武器+手套)"
             />
           </div>
           <!-- 攻擊提升勾選框：雪花、激勵、攻擊藥丸、章魚燒/龍血，彼此互斥。點擊任一項可勾選或取消，其他項目會自動取消勾選 -->
@@ -484,7 +485,7 @@
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <label style="margin-bottom:0; font-weight:bold;">楓葉祝福</label>
               <div style="display:flex; align-items:center; gap:6px;">
-                <label for="maple-apply-toggle" style="font-size:14px; white-space:nowrap;">將目標等級效果套用至右側</label>
+                <label for="maple-apply-toggle" style="font-size:14px; white-space:nowrap;">套用楓祝升等後加成</label>
                 <input type="checkbox" id="maple-apply-toggle" />
               </div>
             </div>
@@ -495,16 +496,18 @@
                 <select id="maple-current-level"></select>
               </div>
               <div style="flex:1; min-width:0;">
-                <label for="maple-target-level" style="font-size:14px;">目標等級</label>
+                <label for="maple-target-level" style="font-size:14px;">提升等級</label>
                 <select id="maple-target-level"></select>
               </div>
             </div>
           </div>
           <!-- 楓葉祝福說明與表攻顯示：顯示目前與目標等級的表攻，以及提升百分比 -->
-          <p class="note" style="margin-top:8px;">
-            可選擇等級後套用楓葉祝福，建議模擬未來擁有楓祝時的等級，並將屬性差加到配點上模擬會更符合實際情況。<br />
-            ※打勾後會將目標等級的效果套用至右側，此功能為開放四轉前的體驗版，開放四轉後會進行改動。<br />
-            目前(2025/8/6)包含國際服在內仍無法取得楓祝30技能書（於皮卡啾掉落），建議模擬時最多選擇20等。<br />
+          <ul class="note" style="margin-top:8px; line-height:1.6;">
+           <li><strong>目前等級</strong>：現持有的楓祝等級（無四轉或沒點請選 0）</li>
+           <li><strong>提升等級</strong>：預計升至的楓祝等級（只提供 10／20／30）</li>
+           <li>建議把<strong>未來升等後的屬性點</strong>加入配點再試算，結果會更貼近(如現在100等，之後120等，主屬+20*5)</li>
+           <li>目前包含國際服在內<strong>仍無法取得楓祝30技能書</strong>(皮卡啾掉落)；一般建議模擬上限 20 等</li>
+         </ul>
           </p>
           <table class="table" id="maple-attack-table" style="width:100%; margin-top:8px; border-collapse: collapse;">
             <thead>
@@ -515,15 +518,15 @@
             </thead>
             <tbody>
               <tr>
-                <td>目前楓祝等級表攻</td>
+                <td>楓祝表攻</td>
                 <td id="maple-current-range">0~0</td>
               </tr>
               <tr>
-                <td>目標楓祝等級表攻</td>
+                <td>楓祝升等後表攻</td>
                 <td id="maple-target-range">0~0</td>
               </tr>
               <tr>
-                <td>升至目標等級後表攻提升</td>
+                <td>楓祝升等提升</td>
                 <td id="maple-increase-rate">0.00%</td>
               </tr>
             </tbody>
@@ -658,11 +661,11 @@
             </thead>
             <tbody>
               <tr>
-                <td>提升前表攻</td>
+                <td>原始表攻</td>
                 <td id="pre-range">0~0</td>
               </tr>
               <tr>
-                <td>換裝後表攻</td>
+                <td>調整後表攻</td>
                 <td id="post-range">0~0</td>
               </tr>
               <tr>
@@ -683,7 +686,7 @@
           <!-- 按鈕列：套用新數據按鈕與提示文字 -->
           <div class="btn-row">
             <button class="custom-btn" id="apply-new-data" type="button" style="margin-top:18px;">套用新數據</button>
-            <span class="btn-note" style="margin-top:18px;">※按下按鈕後會將裝備提升數值直接加到原本的能力值中</span>
+            <span class="btn-note" style="margin-top:18px;">※按下按鈕後會將裝備提升數值及配點修正加到原本的能力值中</span>
           </div>
         </div>
       </div>
@@ -757,16 +760,20 @@
         if (!currentSel || !targetSel) return;
         currentSel.innerHTML = '';
         targetSel.innerHTML  = '';
+        // 目前等級：0~30
         for (let i = 0; i <= 30; i++) {
           const opt1 = document.createElement('option');
           opt1.value = String(i);
           opt1.textContent = String(i);
           currentSel.appendChild(opt1);
-          const opt2 = document.createElement('option');
-          opt2.value = String(i);
-          opt2.textContent = String(i);
-          targetSel.appendChild(opt2);
         }
+        // 提升等級：僅允許 10、20、30
+        [10, 20, 30].forEach((level) => {
+          const opt2 = document.createElement('option');
+          opt2.value = String(level);
+          opt2.textContent = String(level);
+          targetSel.appendChild(opt2);
+        });
       }
 
       /*───────────────────
@@ -845,7 +852,7 @@
             adjustSub2Group.style.visibility   = 'visible';
             adjustSub2Group.style.pointerEvents = 'auto';
           }
-        } else {
+          else {
           // 單副屬
           if (subPointInput) subPointInput.placeholder = '配點';
           if (subEquipInput) subEquipInput.placeholder = '裝備';
@@ -859,8 +866,87 @@
             adjustSub2Group.style.pointerEvents = 'none';
           }
         }
+        }
       }
-
+      /*───────────────────
+        新增：根據武器類型更新右側提升區的欄位標籤與 placeholder
+        主屬與副屬名稱會以實際屬性取代泛稱，例如 STR、DEX。
+      ───────────────────*/
+      function updateIncreaseLabels() {
+        const type = document.getElementById('weapon-type').value;
+        const attrs = weaponAttributes[type] || { main: '主屬', sub: ['副屬'] };
+        // 主屬欄位標籤與 placeholder
+        const oldMainLabel = document.querySelector('label[for="old-main-attr"]');
+        const newMainLabel = document.querySelector('label[for="new-main-attr"]');
+        const incMainLabel = document.querySelector('label[for="attr-increase"]');
+        const oldMainInput = document.getElementById('old-main-attr');
+        const newMainInput = document.getElementById('new-main-attr');
+        if (oldMainLabel) oldMainLabel.textContent = '舊裝備' + attrs.main;
+        if (newMainLabel) newMainLabel.textContent = '新裝備' + attrs.main;
+        if (incMainLabel) incMainLabel.textContent = attrs.main + '提升量';
+        if (oldMainInput) oldMainInput.placeholder = '原' + attrs.main;
+        if (newMainInput) newMainInput.placeholder = '新' + attrs.main;
+        // 副屬欄位
+        const subNames = attrs.sub;
+        if (subNames.length > 1) {
+          // 雙副屬：更新兩組欄位
+          const oldSubStrLabel = document.querySelector('label[for="old-sub-str"]');
+          const newSubStrLabel = document.querySelector('label[for="new-sub-str"]');
+          const incSubStrLabel = document.querySelector('label[for="sub-str-increase"]');
+          const oldSubAgiLabel = document.querySelector('label[for="old-sub-agi"]');
+          const newSubAgiLabel = document.querySelector('label[for="new-sub-agi"]');
+          const incSubAgiLabel = document.querySelector('label[for="sub-agi-increase"]');
+          const oldSubStrInput = document.getElementById('old-sub-str');
+          const newSubStrInput = document.getElementById('new-sub-str');
+          const oldSubAgiInput = document.getElementById('old-sub-agi');
+          const newSubAgiInput = document.getElementById('new-sub-agi');
+          if (oldSubStrLabel) oldSubStrLabel.textContent = '舊裝備' + subNames[0];
+          if (newSubStrLabel) newSubStrLabel.textContent = '新裝備' + subNames[0];
+          if (incSubStrLabel) incSubStrLabel.textContent = subNames[0] + '提升量';
+          if (oldSubAgiLabel) oldSubAgiLabel.textContent = '舊裝備' + subNames[1];
+          if (newSubAgiLabel) newSubAgiLabel.textContent = '新裝備' + subNames[1];
+          if (incSubAgiLabel) incSubAgiLabel.textContent = subNames[1] + '提升量';
+          if (oldSubStrInput) oldSubStrInput.placeholder = '原' + subNames[0];
+          if (newSubStrInput) newSubStrInput.placeholder = '新' + subNames[0];
+          if (oldSubAgiInput) oldSubAgiInput.placeholder = '原' + subNames[1];
+          if (newSubAgiInput) newSubAgiInput.placeholder = '新' + subNames[1];
+        } else {
+          // 單副屬
+          const oldSubLabel = document.querySelector('label[for="old-sub-attr"]');
+          const newSubLabel = document.querySelector('label[for="new-sub-attr"]');
+          const incSubLabel = document.querySelector('label[for="sub-increase"]');
+          const oldSubInput = document.getElementById('old-sub-attr');
+          const newSubInput = document.getElementById('new-sub-attr');
+          if (oldSubLabel) oldSubLabel.textContent = '舊裝備' + subNames[0];
+          if (newSubLabel) newSubLabel.textContent = '新裝備' + subNames[0];
+          if (incSubLabel) incSubLabel.textContent = subNames[0] + '提升量';
+          if (oldSubInput) oldSubInput.placeholder = '原' + subNames[0];
+          if (newSubInput) newSubInput.placeholder = '新' + subNames[0];
+        }
+      
+      } 
+      
+      /*───────────────────
+        新增：根據武器類型更新攻擊力輸入框的提示文字
+        其他職業顯示「請輸入攻擊力(武器+手套)」；
+        拳套：武器+手套+飛鏢；弓：武器+手套+箭矢+弓術精通；
+        弩：武器+手套+箭矢+弩術精通；火槍：武器+手套+子彈。
+      ───────────────────*/
+      function updateAttackPlaceholder() {
+        const type = document.getElementById('weapon-type').value;
+        let text = '請輸入攻擊力(武器+手套)';
+        if (type === '拳套') {
+          text = '請輸入攻擊力(武器+手套+飛鏢)';
+        } else if (type === '弓') {
+          text = '請輸入攻擊力(武器+手套+箭矢+弓術精通)';
+        } else if (type === '弩') {
+          text = '請輸入攻擊力(武器+手套+箭矢+弩術精通)';
+        } else if (type === '火槍') {
+          text = '請輸入攻擊力(武器+手套+子彈)';
+        }
+        const atkInput = document.getElementById('attack-power');
+        if (atkInput) atkInput.placeholder = text;
+      }
       /*───────────────────
         ② 產生武器下拉選單
       ───────────────────*/
@@ -898,6 +984,14 @@
         if (typeof updateAttrHintAndLabels === 'function') {
           updateAttrHintAndLabels();
         }
+        // 更新攻擊力輸入框提示
+        if (typeof updateAttackPlaceholder === 'function') {
+          updateAttackPlaceholder();
+        }
+        // 更新提升區標籤
+        if (typeof updateIncreaseLabels === 'function') {
+          updateIncreaseLabels();
+        }
       }
 
       /*───────────────────
@@ -934,6 +1028,14 @@
         // 更新提示與標籤/placeholder
         if (typeof updateAttrHintAndLabels === 'function') {
           updateAttrHintAndLabels();
+        }
+        // 更新攻擊力輸入框提示
+        if (typeof updateAttackPlaceholder === 'function') {
+          updateAttackPlaceholder();
+        }
+        // 更新提升區標籤
+        if (typeof updateIncreaseLabels === 'function') {
+          updateIncreaseLabels();
         }
 
         // 調整左右欄位高度以維持對稱
@@ -978,7 +1080,7 @@
         // 讀取套用目標開關
         const applyTarget = document.getElementById('maple-apply-toggle')?.checked;
         // 根據開關決定計算使用的楓祝百分比
-        const activeMaplePct = applyTarget ? targetMaplePct : 0;
+        const activeMaplePct = applyTarget ? targetMaplePct : currentMaplePct;
         // 調整欄位（配點修正）
         const adjustMain = +document.getElementById("adjust-main").value || 0;
         const adjustSub1 = +document.getElementById("adjust-sub").value || 0;
@@ -1235,6 +1337,7 @@
       window.addEventListener("DOMContentLoaded", () => {
         populateWeaponOptions();          // ① 先建立武器下拉選單
         populateMapleSelects();            // ② 建立楓葉祝福下拉選單（目前/目標）
+        
         loadData();                       // ③ 把 localStorage 值灌回所有欄位
         // 若沒有儲存值，設定楓祝預設值：目前等級 0，目標等級 20
         const curSel = document.getElementById('maple-current-level');
@@ -1244,6 +1347,13 @@
         updateTargetOptions();             // 更新目標等級選項
         updateWeaponCoefficients();       // ④ 依選項寫入 max/min
         updateAttrHintAndLabels();        // ⑤ 更新屬性說明與標籤
+        // 同步更新攻擊力 placeholder 與提升區標籤
+        if (typeof updateAttackPlaceholder === 'function') {
+          updateAttackPlaceholder();
+        }
+        if (typeof updateIncreaseLabels === 'function') {
+          updateIncreaseLabels();
+        }
         calculate();                      // ⑥ 重新算一次並更新畫面
         // 綁定事件
         // 基礎輸入與提升區域欄位，輸入變動即重新計算
@@ -1388,6 +1498,29 @@
             // 攻擊力增加
             const attackInput = document.getElementById("attack-power");
             if (attackInput) attackInput.value = (parseFloat(attackInput.value) || 0) + atkInc;
+            // 套用配點修正至配點欄位
+            const adjMainVal = parseFloat(document.getElementById("adjust-main").value) || 0;
+            const adjSubVal  = parseFloat(document.getElementById("adjust-sub").value) || 0;
+            const adjSub2Val = parseFloat(document.getElementById("adjust-sub2").value) || 0;
+            const mainPointInput = document.getElementById("main-attr-point");
+            if (mainPointInput) {
+              mainPointInput.value = (parseFloat(mainPointInput.value) || 0) + adjMainVal;
+            }
+            if (wtype === "拳套" || wtype === "短刀") {
+              const subStrPointInput = document.getElementById("sub-attr-str-point");
+              const subAgiPointInput = document.getElementById("sub-attr-agi-point");
+              if (subStrPointInput) {
+                subStrPointInput.value = (parseFloat(subStrPointInput.value) || 0) + adjSubVal;
+              }
+              if (subAgiPointInput) {
+                subAgiPointInput.value = (parseFloat(subAgiPointInput.value) || 0) + adjSub2Val;
+              }
+            } else {
+              const subPointInput = document.getElementById("sub-attr-point");
+              if (subPointInput) {
+                subPointInput.value = (parseFloat(subPointInput.value) || 0) + adjSubVal;
+              }
+            }
             // 清空提升量與原/新欄位
             const clearIds = [
               "attr-increase", "sub-increase", "sub-str-increase", "sub-agi-increase", "attack-increase",
@@ -1395,7 +1528,9 @@
               "old-sub-attr", "new-sub-attr",
               "old-sub-str", "new-sub-str",
               "old-sub-agi", "new-sub-agi",
-              "old-attack", "new-attack"
+              "old-attack", "new-attack",
+              // 也清空配點修正欄位
+              "adjust-main", "adjust-sub", "adjust-sub2"
             ];
             clearIds.forEach((cid) => {
               const elem = document.getElementById(cid);
