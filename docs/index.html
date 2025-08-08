@@ -508,6 +508,7 @@
            <li>建議把<strong>未來升等後的屬性點</strong>加入配點再試算，結果會更貼近(如現在100等，之後120等，主屬+20*5)</li>
            <li>目前包含國際服在內<strong>仍無法取得楓祝30技能書</strong>(皮卡啾掉落)；一般建議模擬上限 20 等</li>
          </ul>
+          </p>
           <table class="table" id="maple-attack-table" style="width:100%; margin-top:8px; border-collapse: collapse;">
             <thead>
               <tr>
@@ -680,7 +681,7 @@
                 <td>總增幅</td>
                 <td id="total-rate">0%</td>
               </tr>
-              <!-- 新增：拳套專用雙/三飛閃增幅顯示列，預設隱藏。當武器為拳套時顯示 -->
+              <!-- 拳套專用：雙/三飛閃增幅（預設隱藏，拳套時顯示） -->
               <tr id="star-increase-row" style="display:none;">
                 <td>雙/三飛閃增幅</td>
                 <td id="star-rate">0%</td>
@@ -814,6 +815,9 @@
       function updateAttrHintAndLabels() {
         const type = document.getElementById('weapon-type').value;
         const info = weaponAttributes[type] || { main: '主屬', sub: ['副屬'] };
+         /* === 新增：更新「主屬修正」標籤文字 === */
+        const adjustMainLabel = document.querySelector('#adjust-main-group label');
+        if (adjustMainLabel) adjustMainLabel.textContent = '主屬修正 (' + info.main + ')';
         // 更新提示文字
         const hintMain = document.getElementById('hint-main');
         const hintSub  = document.getElementById('hint-sub');
@@ -856,29 +860,27 @@
             adjustSub2Group.style.visibility   = 'visible';
             adjustSub2Group.style.pointerEvents = 'auto';
           }
-
-      /*───────────────────
-        新增：根據武器類型更新攻擊力輸入框的提示文字
-        其他職業顯示「請輸入攻擊力(武器+手套)」；
-        拳套：武器+手套+飛鏢；弓：武器+手套+箭矢+弓術精通；
-        弩：武器+手套+箭矢+弩術精通；火槍：武器+手套+子彈。
-      ───────────────────*/
-      function updateAttackPlaceholder() {
-        const type = document.getElementById('weapon-type').value;
-        let text = '請輸入攻擊力(武器+手套)';
-        if (type === '拳套') {
-          text = '請輸入攻擊力(武器+手套+飛鏢)';
-        } else if (type === '弓') {
-          text = '請輸入攻擊力(武器+手套+箭矢+弓術精通)';
-        } else if (type === '弩') {
-          text = '請輸入攻擊力(武器+手套+箭矢+弩術精通)';
-        } else if (type === '火槍') {
-          text = '請輸入攻擊力(武器+手套+子彈)';
         }
-        const atkInput = document.getElementById('attack-power');
-        if (atkInput) atkInput.placeholder = text;
-      }
+        else {
+          /* 單副屬 → 隱藏第二副屬欄位、清空其值 */
 
+            if (adjustSubLabel)  adjustSubLabel.textContent  = '副屬修正 (' + info.sub[0] + ')';
+            if (subPointInput)       subPointInput.placeholder  = '配點';
+            if (subEquipInput)       subEquipInput.placeholder  = '裝備';
+            if (subSingleLabelSpan)  subSingleLabelSpan.textContent = info.sub[0];
+            if (subStrPointInput) subStrPointInput.value = '';
+            if (subStrEquipInput) subStrEquipInput.value = '';
+            if (subAgiPointInput) subAgiPointInput.value = '';
+            if (subAgiEquipInput) subAgiEquipInput.value = '';
+          
+            const adjustSub2Group = document.getElementById('adjust-sub2-group');
+            if (adjustSub2Group) {
+              adjustSub2Group.style.visibility   = 'hidden';
+              adjustSub2Group.style.pointerEvents = 'none';
+            }
+          }
+      }
+      
       /*───────────────────
         新增：根據武器類型更新右側提升區的欄位標籤與 placeholder
         主屬與副屬名稱會以實際屬性取代泛稱，例如 STR、DEX。
@@ -933,24 +935,47 @@
           if (incSubLabel) incSubLabel.textContent = subNames[0] + '提升量';
           if (oldSubInput) oldSubInput.placeholder = '原' + subNames[0];
           if (newSubInput) newSubInput.placeholder = '新' + subNames[0];
-        }
-      }
-        } else {
-          // 單副屬
-          if (subPointInput) subPointInput.placeholder = '配點';
-          if (subEquipInput) subEquipInput.placeholder = '裝備';
-          if (subSingleLabelSpan) subSingleLabelSpan.textContent = info.sub[0];
-          if (adjustSubLabel) adjustSubLabel.textContent = '副屬修正';
-          if (adjustSub2Label) adjustSub2Label.textContent = '第二副屬修正';
-          // 隱藏第二副屬修正欄位但保留格位，並禁用輸入
-          const adjustSub2Group = document.getElementById('adjust-sub2-group');
-          if (adjustSub2Group) {
-            adjustSub2Group.style.visibility   = 'hidden';
-            adjustSub2Group.style.pointerEvents = 'none';
-          }
-        }
-      }
+          // ① 隱藏第二副屬三列（力量/敏捷那三列）
+          const dualRows = document.querySelectorAll('.dual-sub-row');
+          dualRows.forEach(r => (r.style.display = 'none'));
 
+          // ② 清空第二副屬欄位殘留值
+          [
+            'old-sub-str', 'new-sub-str', 'sub-str-increase',
+            'old-sub-agi', 'new-sub-agi', 'sub-agi-increase'
+          ].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            // 如果是 <td> / <span> 顯示值
+            if ('textContent' in el) el.textContent = '';
+            // 如果是 <input> 值
+            if ('value' in el) el.value = '';
+          });
+        }
+      
+      } 
+      
+      /*───────────────────
+        新增：根據武器類型更新攻擊力輸入框的提示文字
+        其他職業顯示「請輸入攻擊力(武器+手套)」；
+        拳套：武器+手套+飛鏢；弓：武器+手套+箭矢+弓術精通；
+        弩：武器+手套+箭矢+弩術精通；火槍：武器+手套+子彈。
+      ───────────────────*/
+      function updateAttackPlaceholder() {
+        const type = document.getElementById('weapon-type').value;
+        let text = '請輸入攻擊力(武器+手套)';
+        if (type === '拳套') {
+          text = '請輸入攻擊力(武器+手套+飛鏢)';
+        } else if (type === '弓') {
+          text = '請輸入攻擊力(武器+手套+箭矢+弓術精通)';
+        } else if (type === '弩') {
+          text = '請輸入攻擊力(武器+手套+箭矢+弩術精通)';
+        } else if (type === '火槍') {
+          text = '請輸入攻擊力(武器+手套+子彈)';
+        }
+        const atkInput = document.getElementById('attack-power');
+        if (atkInput) atkInput.placeholder = text;
+      }
       /*───────────────────
         ② 產生武器下拉選單
       ───────────────────*/
@@ -1223,7 +1248,7 @@
           // 非拳套武器隱藏此列
           if (starRow) starRow.style.display = 'none';
         }
-
+        
         // 更新楓葉祝福表格（左側）
         const curRangeElem  = document.getElementById('maple-current-range');
         const tgtRangeElem  = document.getElementById('maple-target-range');
@@ -1368,6 +1393,7 @@
       window.addEventListener("DOMContentLoaded", () => {
         populateWeaponOptions();          // ① 先建立武器下拉選單
         populateMapleSelects();            // ② 建立楓葉祝福下拉選單（目前/目標）
+        
         loadData();                       // ③ 把 localStorage 值灌回所有欄位
         // 若沒有儲存值，設定楓祝預設值：目前等級 0，目標等級 20
         const curSel = document.getElementById('maple-current-level');
