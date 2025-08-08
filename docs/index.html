@@ -681,14 +681,11 @@
                 <td>總增幅</td>
                 <td id="total-rate">0%</td>
               </tr>
-<<<<<<< HEAD
               <!-- 拳套專用：雙/三飛閃增幅（預設隱藏，拳套時顯示） -->
               <tr id="star-increase-row" style="display:none;">
                 <td>雙/三飛閃增幅</td>
                 <td id="star-rate">0%</td>
               </tr>
-=======
->>>>>>> 229368d4db7976216388ae6ec5e5ca42bad982ac
             </tbody>
           </table>
           <!-- 按鈕列：套用新數據按鈕與提示文字 -->
@@ -1225,7 +1222,6 @@
         document.getElementById("total-rate").textContent = `${totalRate.toFixed(2)}%`;
         document.getElementById("atk-to-attr").textContent = ratio;
 
-<<<<<<< HEAD
         // 新增：拳套時計算雙/三飛閃增幅（依據幸運×攻擊力公式）
         const starRow = document.getElementById('star-increase-row');
         const starCell = document.getElementById('star-rate');
@@ -1253,8 +1249,6 @@
           if (starRow) starRow.style.display = 'none';
         }
         
-=======
->>>>>>> 229368d4db7976216388ae6ec5e5ca42bad982ac
         // 更新楓葉祝福表格（左側）
         const curRangeElem  = document.getElementById('maple-current-range');
         const tgtRangeElem  = document.getElementById('maple-target-range');
